@@ -15,6 +15,9 @@ import nz.eloque.foss_wallet.ui.card.primary.BoardingPrimary
 import nz.eloque.foss_wallet.ui.card.primary.GenericPrimary
 import nz.eloque.foss_wallet.ui.screens.pass.AsyncPassImage
 
+private fun PassType.supportsStrip() = this is PassType.Coupon || this is PassType.Event || this is PassType.StoreCard
+private fun PassType.supportsThumbnail() = this is PassType.Generic || this is PassType.Event
+
 @Composable
 fun ShortPassContent(
     localizedPass: LocalizedPassWithTags,
@@ -30,9 +33,9 @@ fun ShortPassContent(
         HeaderRow(pass, false)
         when (pass.type) {
             is PassType.Boarding -> BoardingPrimary(pass, pass.type.transitType, false)
-            else -> GenericPrimary(pass, false)
+            else -> GenericPrimary(pass, false, showThumbnail = pass.type.supportsThumbnail())
         }
-        if (pass.primaryFields.empty() && pass.hasStrip) {
+        if (pass.hasStrip && pass.type.supportsStrip()) {
             AsyncPassImage(
                 model = pass.stripFile(context),
                 modifier = Modifier.fillMaxWidth(),
@@ -59,12 +62,14 @@ fun PassContent(
         HeaderRow(pass)
         when (pass.type) {
             is PassType.Boarding -> BoardingPrimary(pass, pass.type.transitType)
-            else -> GenericPrimary(pass)
+            else -> GenericPrimary(pass, showThumbnail = pass.type.supportsThumbnail())
         }
-        AsyncPassImage(
-            model = pass.stripFile(context),
-            modifier = Modifier.fillMaxWidth(),
-        )
+        if (pass.hasStrip && pass.type.supportsStrip()) {
+            AsyncPassImage(
+                model = pass.stripFile(context),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         FieldsRow(pass.secondaryFields)
         FieldsRow(pass.auxiliaryFields)
         content()

@@ -22,11 +22,12 @@ import nz.eloque.foss_wallet.ui.card.PassField
 fun GenericPrimary(
     pass: Pass,
     isSelectable: Boolean = true,
+    showThumbnail: Boolean = true,
 ) {
     val context = LocalContext.current
 
     val primaryField = pass.primaryFields.firstOrNull()
-    val thumbnailFile = pass.thumbnailFile(context)
+    val thumbnailFile = if (showThumbnail) pass.thumbnailFile(context) else null
 
     if (primaryField.isNotEmpty() || thumbnailFile != null) {
         Row(
