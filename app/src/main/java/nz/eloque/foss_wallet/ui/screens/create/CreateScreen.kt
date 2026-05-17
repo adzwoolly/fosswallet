@@ -20,9 +20,9 @@ fun CreateScreen(
         toolWindow = true,
         title = stringResource(id = Screen.Create.resourceId),
     ) {
-        CreateView(
-            navController,
-            createViewModel,
+        PassEditorView(
+            navController = navController,
+            createViewModel = createViewModel,
             initialBarcode = initialBarcode,
         )
     }

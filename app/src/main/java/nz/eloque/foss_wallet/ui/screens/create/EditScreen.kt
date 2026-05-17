@@ -64,7 +64,7 @@ fun EditScreen(
         toolWindow = true,
         title = stringResource(R.string.edit_pass),
     ) {
-        CreateView(
+        PassEditorView(
             navController = navController,
             createViewModel = createViewModel,
             existingPass = pass,
