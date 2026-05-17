@@ -1,6 +1,7 @@
 package nz.eloque.foss_wallet.ui.screens.create
 
 import android.annotation.SuppressLint
+import androidx.annotation.StringRes
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
@@ -523,8 +524,8 @@ fun PassEditorView(
                 is EditorSheet.Fields ->
                     FieldsSheetContent(
                         category = sheet.category,
+                        passType = type,
                         fields = fieldsOf(sheet.category),
-                        isBoardingPrimary = sheet.category == FieldCategory.Primary && type is PassType.Boarding,
                         onFieldUpdate = { key, label, value ->
                             fields =
                                 fields.map { if (it.key == key) it.copy(label = label, value = value) else it }
@@ -706,8 +707,8 @@ private fun LogoTextSheetContent(
 @Composable
 private fun FieldsSheetContent(
     category: FieldCategory,
+    passType: PassType,
     fields: List<FieldDraft>,
-    isBoardingPrimary: Boolean,
     onFieldUpdate: (key: String, label: String, value: String) -> Unit,
     onFieldDelete: (key: String) -> Unit,
     onFieldAdd: () -> Unit,
@@ -744,13 +745,11 @@ private fun FieldsSheetContent(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        if (isBoardingPrimary) {
-            Text(
-                text = "For boarding passes: first field is departure, second is destination.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
+        Text(
+            text = stringResource(fieldHintRes(passType, category)),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
 
         fields.forEach { field ->
             SheetFieldRow(
@@ -1324,6 +1323,54 @@ private fun openDateTimePicker(
         calendar.get(Calendar.DAY_OF_MONTH),
     ).show()
 }
+
+@StringRes
+private fun fieldHintRes(
+    passType: PassType,
+    category: FieldCategory,
+): Int =
+    when (passType) {
+        is PassType.Boarding ->
+            when (category) {
+                FieldCategory.Header -> R.string.hint_field_boarding_header
+                FieldCategory.Primary -> R.string.hint_field_boarding_primary
+                FieldCategory.Secondary -> R.string.hint_field_boarding_secondary
+                FieldCategory.Auxiliary -> R.string.hint_field_boarding_auxiliary
+                FieldCategory.Back -> R.string.hint_field_boarding_back
+            }
+        is PassType.Event ->
+            when (category) {
+                FieldCategory.Header -> R.string.hint_field_event_header
+                FieldCategory.Primary -> R.string.hint_field_event_primary
+                FieldCategory.Secondary -> R.string.hint_field_event_secondary
+                FieldCategory.Auxiliary -> R.string.hint_field_event_auxiliary
+                FieldCategory.Back -> R.string.hint_field_event_back
+            }
+        is PassType.Coupon ->
+            when (category) {
+                FieldCategory.Header -> R.string.hint_field_coupon_header
+                FieldCategory.Primary -> R.string.hint_field_coupon_primary
+                FieldCategory.Secondary -> R.string.hint_field_coupon_secondary
+                FieldCategory.Auxiliary -> R.string.hint_field_coupon_auxiliary
+                FieldCategory.Back -> R.string.hint_field_coupon_back
+            }
+        is PassType.StoreCard ->
+            when (category) {
+                FieldCategory.Header -> R.string.hint_field_store_header
+                FieldCategory.Primary -> R.string.hint_field_store_primary
+                FieldCategory.Secondary -> R.string.hint_field_store_secondary
+                FieldCategory.Auxiliary -> R.string.hint_field_store_auxiliary
+                FieldCategory.Back -> R.string.hint_field_store_back
+            }
+        else ->
+            when (category) {
+                FieldCategory.Header -> R.string.hint_field_generic_header
+                FieldCategory.Primary -> R.string.hint_field_generic_primary
+                FieldCategory.Secondary -> R.string.hint_field_generic_secondary
+                FieldCategory.Auxiliary -> R.string.hint_field_generic_auxiliary
+                FieldCategory.Back -> R.string.hint_field_generic_back
+            }
+    }
 
 private fun barcodeValid(barCode: BarCode): Boolean = barCode.encodeAsBitmap(100, 100, false) != null
 

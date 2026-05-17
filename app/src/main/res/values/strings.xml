@@ -165,6 +165,38 @@
     <string name="zone_barcode_desc">The scannable barcode. At least one is required.</string>
     <string name="zone_appearance_desc">Set the pass colors, name, organization and other metadata.</string>
     <string name="zone_footer_desc">An image displayed as the background behind the barcode.</string>
+
+    <!-- Per-pass-type field hints shown in the field editor sheet -->
+    <string name="hint_field_boarding_header">Example: boarding zone, gate, or seat class</string>
+    <string name="hint_field_boarding_primary">First field: departure airport or city. Second field: destination airport or city.</string>
+    <string name="hint_field_boarding_secondary">Example: passenger name and flight number</string>
+    <string name="hint_field_boarding_auxiliary">Example: seat number, terminal, and departure time</string>
+    <string name="hint_field_boarding_back">Example: booking reference and airline contact number</string>
+
+    <string name="hint_field_event_header">Example: section, row, or seat number</string>
+    <string name="hint_field_event_primary">Example: event name or performer</string>
+    <string name="hint_field_event_secondary">Example: venue name and date</string>
+    <string name="hint_field_event_auxiliary">Example: doors open time or age restriction</string>
+    <string name="hint_field_event_back">Example: venue address, contact info, and terms</string>
+
+    <string name="hint_field_coupon_header">Example: promo code or discount amount</string>
+    <string name="hint_field_coupon_primary">Example: discount description, e.g. "20% off"</string>
+    <string name="hint_field_coupon_secondary">Example: shop name and valid-until date</string>
+    <string name="hint_field_coupon_auxiliary">Example: minimum spend or product category</string>
+    <string name="hint_field_coupon_back">Example: full terms and conditions</string>
+
+    <string name="hint_field_store_header">Example: points balance or membership tier</string>
+    <string name="hint_field_store_primary">Example: member name or loyalty card number</string>
+    <string name="hint_field_store_secondary">Example: points earned or reward status</string>
+    <string name="hint_field_store_auxiliary">Example: membership tier and expiry date</string>
+    <string name="hint_field_store_back">Example: store locations and customer service number</string>
+
+    <string name="hint_field_generic_header">Example: status, category, or reference code</string>
+    <string name="hint_field_generic_primary">Example: pass title or main identifier</string>
+    <string name="hint_field_generic_secondary">Example: date, location, or subtitle</string>
+    <string name="hint_field_generic_auxiliary">Example: additional details or instructions</string>
+    <string name="hint_field_generic_back">Example: full details, contact info, or terms</string>
+
     <string name="attachment_name">Attachment name</string>
     <string name="choose_attachment_name">Choose attachment name</string>
     <string name="add_attachment">Add attachment</string>
