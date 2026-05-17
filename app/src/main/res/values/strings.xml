@@ -204,6 +204,8 @@
     <string name="hint_field_generic_auxiliary">Example: additional details or instructions</string>
     <string name="hint_field_generic_back">Example: full details, contact info, or terms</string>
 
+    <string name="add_location">Add location</string>
+    <string name="latlon_input">Latitude, Longitude</string>
     <string name="attachment_name">Attachment name</string>
     <string name="choose_attachment_name">Choose attachment name</string>
     <string name="add_attachment">Add attachment</string>
