@@ -33,6 +33,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CalendarToday
@@ -43,6 +44,7 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -461,6 +463,15 @@ fun PassEditorView(
             }
         }
 
+        OutlinedButton(
+            onClick = { activeSheet = EditorSheet.Metadata },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(imageVector = Icons.Default.Info, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.metadata))
+        }
+
         Button(
             enabled = createValid,
             onClick = { doSave() },
@@ -593,17 +604,11 @@ fun PassEditorView(
 
                 EditorSheet.Appearance ->
                     AppearanceSheetContent(
-                        organization = organization,
-                        serialNumber = serialNumber,
                         backgroundColor = backgroundColor,
                         foregroundColor = foregroundColor,
                         labelColor = labelColor,
-                        relevantStart = relevantStart,
-                        relevantEnd = relevantEnd,
-                        expirationDate = expirationDate,
-                        location = location,
-                        onOrganizationChange = { organization = it },
-                        onSerialNumberChange = { serialNumber = it },
+                        footerUri = footerUrl,
+                        boardingPassActive = type is PassType.Boarding,
                         onColorPick = { colorPickerTarget = it },
                         onColorClear = { target ->
                             when (target) {
@@ -619,6 +624,20 @@ fun PassEditorView(
                                 ColorTarget.Label -> labelColor = color
                             }
                         },
+                        onFooterChoose = { footerUrl = it },
+                        onFooterClear = { footerUrl = null },
+                    )
+
+                EditorSheet.Metadata ->
+                    MetadataSheetContent(
+                        organization = organization,
+                        serialNumber = serialNumber,
+                        relevantStart = relevantStart,
+                        relevantEnd = relevantEnd,
+                        expirationDate = expirationDate,
+                        location = location,
+                        onOrganizationChange = { organization = it },
+                        onSerialNumberChange = { serialNumber = it },
                         onRelevantStartPick = { openDateTimePicker(context, relevantStart) { relevantStart = it } },
                         onRelevantStartClear = { relevantStart = null },
                         onRelevantEndPick = { openDateTimePicker(context, relevantEnd) { relevantEnd = it } },
@@ -627,10 +646,6 @@ fun PassEditorView(
                         onExpirationClear = { expirationDate = null },
                         onLocationPick = { showLocationPicker = true },
                         onLocationClear = { location = null },
-                        footerUri = footerUrl,
-                        onFooterChoose = { footerUrl = it },
-                        onFooterClear = { footerUrl = null },
-                        boardingPassActive = type is PassType.Boarding,
                     )
             }
         }
@@ -900,35 +915,17 @@ private fun BarcodeSheetContent(
 
 @Composable
 private fun AppearanceSheetContent(
-    organization: String,
-    serialNumber: String,
     backgroundColor: Color?,
     foregroundColor: Color?,
     labelColor: Color?,
-    relevantStart: ZonedDateTime?,
-    relevantEnd: ZonedDateTime?,
-    expirationDate: ZonedDateTime?,
-    location: Location?,
     footerUri: Uri?,
     boardingPassActive: Boolean,
-    onOrganizationChange: (String) -> Unit,
-    onSerialNumberChange: (String) -> Unit,
     onColorPick: (ColorTarget) -> Unit,
     onColorClear: (ColorTarget) -> Unit,
     onColorChange: (ColorTarget, Color) -> Unit,
-    onRelevantStartPick: () -> Unit,
-    onRelevantStartClear: () -> Unit,
-    onRelevantEndPick: () -> Unit,
-    onRelevantEndClear: () -> Unit,
-    onExpirationPick: () -> Unit,
-    onExpirationClear: () -> Unit,
-    onLocationPick: () -> Unit,
-    onLocationClear: () -> Unit,
     onFooterChoose: (Uri?) -> Unit,
     onFooterClear: () -> Unit,
 ) {
-    val dtFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z")
-
     Column(
         modifier =
             Modifier
@@ -968,6 +965,66 @@ private fun AppearanceSheetContent(
             onPick = { onColorPick(ColorTarget.Label) },
             onClear = { onColorClear(ColorTarget.Label) },
             onColorChange = { onColorChange(ColorTarget.Label, it) },
+        )
+
+        if (boardingPassActive) {
+            HorizontalDivider()
+            Text(
+                text = stringResource(R.string.footer),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Text(
+                text = stringResource(R.string.zone_footer_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            ImagePicker(
+                imageUrl = footerUri,
+                onClear = onFooterClear,
+                onChoose = onFooterChoose,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        Spacer(modifier = Modifier.navigationBarsPadding())
+    }
+}
+
+@Composable
+private fun MetadataSheetContent(
+    organization: String,
+    serialNumber: String,
+    relevantStart: ZonedDateTime?,
+    relevantEnd: ZonedDateTime?,
+    expirationDate: ZonedDateTime?,
+    location: Location?,
+    onOrganizationChange: (String) -> Unit,
+    onSerialNumberChange: (String) -> Unit,
+    onRelevantStartPick: () -> Unit,
+    onRelevantStartClear: () -> Unit,
+    onRelevantEndPick: () -> Unit,
+    onRelevantEndClear: () -> Unit,
+    onExpirationPick: () -> Unit,
+    onExpirationClear: () -> Unit,
+    onLocationPick: () -> Unit,
+    onLocationClear: () -> Unit,
+) {
+    val dtFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z")
+
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(text = stringResource(R.string.metadata), style = MaterialTheme.typography.titleLarge)
+        Text(
+            text = stringResource(R.string.zone_metadata_desc),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         OutlinedTextField(
@@ -1019,25 +1076,6 @@ private fun AppearanceSheetContent(
             onClear = onLocationClear,
             clearEnabled = location != null,
         )
-
-        if (boardingPassActive) {
-            HorizontalDivider()
-            Text(
-                text = stringResource(R.string.footer),
-                style = MaterialTheme.typography.titleSmall,
-            )
-            Text(
-                text = stringResource(R.string.zone_footer_desc),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            ImagePicker(
-                imageUrl = footerUri,
-                onClear = onFooterClear,
-                onChoose = onFooterChoose,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
 
         Spacer(modifier = Modifier.navigationBarsPadding())
     }

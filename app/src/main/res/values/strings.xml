@@ -164,7 +164,9 @@
     <string name="zone_strip_desc">A full-width decorative or informational image behind the fields.</string>
     <string name="zone_thumbnail_desc">A portrait image shown to the right of the primary field.</string>
     <string name="zone_barcode_desc">The scannable barcode. At least one is required.</string>
-    <string name="zone_appearance_desc">Set the pass colors, name, organization and other metadata.</string>
+    <string name="zone_appearance_desc">Set the pass colors and visual styling.</string>
+    <string name="metadata">Metadata</string>
+    <string name="zone_metadata_desc">Pass information, dates and location used for relevancy.</string>
     <string name="zone_footer_desc">An image displayed as the background behind the barcode.</string>
 
     <!-- Per-pass-type field hints shown in the field editor sheet -->

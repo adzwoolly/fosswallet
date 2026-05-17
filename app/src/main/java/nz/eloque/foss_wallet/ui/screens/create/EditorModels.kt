@@ -34,4 +34,5 @@ internal sealed class EditorSheet {
     object Footer : EditorSheet()
     object Barcodes : EditorSheet()
     object Appearance : EditorSheet()
+    object Metadata : EditorSheet()
 }
