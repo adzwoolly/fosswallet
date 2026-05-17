@@ -42,7 +42,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "nz.eloque.foss_wallet"
+        applicationId = "uk.adamwoollen.fosswallet"
         minSdk = 28
         targetSdk = 37
         versionCode = 108
