@@ -144,4 +144,16 @@ interface PassDao {
     """,
     )
     suspend fun nonArchivedWithExpirationDate(): List<Pass>
+
+    @Query("SELECT * FROM pass")
+    suspend fun allPassesSnapshot(): List<Pass>
+
+    @Query("SELECT * FROM PassGroup")
+    suspend fun allGroups(): List<PassGroup>
+
+    @Query("SELECT * FROM PassMetadata")
+    suspend fun allMetadata(): List<PassMetadata>
+
+    @Query("SELECT * FROM Attachment")
+    suspend fun allAttachments(): List<Attachment>
 }

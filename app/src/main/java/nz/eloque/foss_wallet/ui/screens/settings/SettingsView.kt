@@ -9,7 +9,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,6 +52,22 @@ fun SettingsView(settingsViewModel: SettingsViewModel) {
     val passes by remember(passFlow) { passFlow.map { it } }.collectAsState(listOf())
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { settingsViewModel.refresh() }
+
+    val exportBackupLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+            uri ?: return@rememberLauncherForActivityResult
+            coroutineScope.launch(Dispatchers.IO) {
+                context.contentResolver.openOutputStream(uri)?.use { settingsViewModel.exportBackup(it) }
+            }
+        }
+
+    val importBackupLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            uri ?: return@rememberLauncherForActivityResult
+            coroutineScope.launch(Dispatchers.IO) {
+                context.contentResolver.openInputStream(uri)?.use { settingsViewModel.importBackup(it) }
+            }
+        }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -132,8 +151,20 @@ fun SettingsView(settingsViewModel: SettingsViewModel) {
                     }
                 },
             )
+            HorizontalDivider()
+            SettingsButton(
+                title = stringResource(R.string.export_backup),
+                icon = Icons.Default.Save,
+                onClick = { exportBackupLauncher.launch("fosswallet-backup.fosswallet") },
+            )
+            HorizontalDivider()
+            SettingsButton(
+                title = stringResource(R.string.import_backup),
+                icon = Icons.Default.FolderOpen,
+                onClick = { importBackupLauncher.launch(arrayOf("application/octet-stream", "*/*")) },
+            )
             Text(
-                text = stringResource(R.string.created_pass_export_warning),
+                text = stringResource(R.string.created_pass_export_warning_backup),
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(16.dp),
             )

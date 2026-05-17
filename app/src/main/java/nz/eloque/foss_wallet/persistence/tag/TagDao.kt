@@ -20,6 +20,9 @@ interface TagDao {
     @Query("SELECT * FROM PassTag")
     suspend fun crossRef(): List<PassTagCrossRef>
 
+    @Query("SELECT * FROM tag")
+    suspend fun allTagsSnapshot(): List<Tag>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(tag: Tag)
 
