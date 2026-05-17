@@ -13,7 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.LinkInteractionListener
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
@@ -46,6 +49,8 @@ private val linkStyle =
             ),
     )
 
+private val bareUrlRegex = Regex("""https?://\S+""")
+
 val passFieldContentStyle: TextStyle
     @Composable get() =
         MaterialTheme.typography.bodyMedium.copy(
@@ -69,6 +74,10 @@ fun PassField(
             Alignment.CenterHorizontally -> TextAlign.Center
             else -> TextAlign.Start
         }
+    val uriHandler = LocalUriHandler.current
+    val linkListener = LinkInteractionListener { annotation ->
+        if (annotation is LinkAnnotation.Url) uriHandler.openUri(annotation.url)
+    }
 
     Column(
         modifier = modifier,
@@ -80,9 +89,11 @@ fun PassField(
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             useTooltip = isSelectable,
         )
+        val parsedText = field.content.parseHtml(linkListener)
+        val hasLinks = parsedText.getLinkAnnotations(0, parsedText.length).isNotEmpty()
         val content = @Composable {
             Text(
-                text = field.content.parseHtml(),
+                text = parsedText,
                 fontSize = fontSize,
                 textAlign = textAlign,
                 overflow = TextOverflow.Ellipsis,
@@ -90,7 +101,7 @@ fun PassField(
                 style = style,
             )
         }
-        if (isSelectable) SelectionContainer { content() } else content()
+        if (isSelectable && !hasLinks) SelectionContainer { content() } else content()
     }
 }
 
@@ -219,7 +230,12 @@ private fun String.sanitize(): String =
         .replace("\\r", "")
         .replace("\n", "<br>")
 
-private fun PassContent.parseHtml(): AnnotatedString = AnnotatedString.fromHtml(prettyPrint().sanitize(), linkStyle)
+private fun String.linkifyBareUrls(): String =
+    if (contains("<a ")) this
+    else bareUrlRegex.replace(this) { "<a href=\"${it.value}\">${it.value}</a>" }
+
+private fun PassContent.parseHtml(linkInteractionListener: LinkInteractionListener? = null): AnnotatedString =
+    AnnotatedString.fromHtml(prettyPrint().sanitize().linkifyBareUrls(), linkStyle, linkInteractionListener)
 
 private fun previewPassField(
     label: String,

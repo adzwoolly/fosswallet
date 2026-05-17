@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,8 +35,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import coil.compose.AsyncImage
@@ -238,18 +243,49 @@ fun AsyncPassImage(
     }
 }
 
+private val urlRegex = Regex("""https?://\S+""")
+
 @Composable
 fun BackFields(fields: List<PassField>) {
+    val uriHandler = LocalUriHandler.current
     Column(
         modifier = Modifier.fillMaxWidth().padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        fields.forEach {
-            PassField(
-                field = it,
-                maxLines = Int.MAX_VALUE,
-                style = MaterialTheme.typography.bodyLarge,
-            )
+        fields.forEach { field ->
+            val rawText = field.content.prettyPrint().trim()
+            val isStandaloneUrl = urlRegex.matches(rawText)
+            if (isStandaloneUrl) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { uriHandler.openUri(rawText) },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    PassField(
+                        field = field,
+                        maxLines = Int.MAX_VALUE,
+                        isSelectable = false,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            textDecoration = TextDecoration.Underline,
+                            color = MaterialTheme.colorScheme.primary,
+                        ),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            } else {
+                PassField(
+                    field = field,
+                    maxLines = Int.MAX_VALUE,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
         }
     }
 }
