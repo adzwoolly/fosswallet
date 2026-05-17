@@ -92,6 +92,7 @@
     <string name="store_card">Store card</string>
     <string name="barcode_format">Barcode format</string>
     <string name="barcode_alt_text">Alternative barcode text</string>
+    <string name="barcode_alt_text_desc">Shown beneath the barcode as a human-readable fallback — e.g. a booking reference or membership number a cashier can type if the barcode can\'t be scanned. Leave blank to show the barcode value instead.</string>
     <string name="add_another_barcode">Add another barcode</string>
     <string name="logo_text">Logo text</string>
     <string name="icon">Icon</string>

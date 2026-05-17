@@ -876,6 +876,7 @@ private fun BarcodeSheetContent(
                     onValueChange = { onBarcodeUpdate(index, barcode.copy(altText = it)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    supportingText = { Text(stringResource(R.string.barcode_alt_text_desc), style = MaterialTheme.typography.bodySmall) },
                 )
                 ComboBox(
                     title = stringResource(R.string.barcode_format),
