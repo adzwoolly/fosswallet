@@ -39,6 +39,7 @@ import nz.eloque.foss_wallet.ui.screens.archive.ArchiveScreen
 import nz.eloque.foss_wallet.ui.screens.create.AdvancedAddScreen
 import nz.eloque.foss_wallet.ui.screens.create.CreateScreen
 import nz.eloque.foss_wallet.ui.screens.create.CreateViewModel
+import nz.eloque.foss_wallet.ui.screens.create.EditScreen
 import nz.eloque.foss_wallet.ui.screens.pass.PassScreen
 import nz.eloque.foss_wallet.ui.screens.pass.PassViewModel
 import nz.eloque.foss_wallet.ui.screens.scan.ScanScreen
@@ -182,6 +183,13 @@ fun WalletApp(
             ) { backStackEntry ->
                 val passId = backStackEntry.arguments?.getString("passId")!!
                 PassScreen(passId, navController, passViewModel)
+            }
+            composable(
+                route = "edit/{passId}",
+                arguments = listOf(navArgument("passId") { type = NavType.StringType }),
+            ) { backStackEntry ->
+                val passId = backStackEntry.arguments?.getString("passId")!!
+                EditScreen(passId, navController, createViewModel, passViewModel)
             }
             composable(
                 route = "updateFailure/{reason}/{rationale}",

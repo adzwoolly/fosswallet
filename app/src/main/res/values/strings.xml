@@ -130,6 +130,16 @@
     <string name="no_map_app_found">No map app found</string>
     <string name="no_calendar_app_found">No calendar app found</string>
     <string name="created_pass_export_warning">Created passes can currently not be exported</string>
+    <string name="edit_pass">Edit pass</string>
+    <string name="save_changes">Save changes</string>
+    <string name="signed_pass_warning_title">Edit signed pass?</string>
+    <string name="signed_pass_warning_body">This pass was imported from an external source. Editing it will remove the original file and disable sharing. Continue?</string>
+    <string name="signed_pass_warning_confirm">Edit anyway</string>
+    <string name="pass_fields">Fields</string>
+    <string name="field_label">Label</string>
+    <string name="field_value">Value</string>
+    <string name="field_category">Category</string>
+    <string name="add_field">Add field</string>
     <string name="show_archived_passes">Show archived passes</string>
     <string name="permission_read_passes_label">Read Passes</string>
     <string name="permission_read_passes_description">Read your passes and their details, including barcodes in a Catima compatible way</string>

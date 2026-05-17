@@ -33,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -44,6 +45,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -83,18 +85,23 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import nz.eloque.foss_wallet.R
 import nz.eloque.foss_wallet.model.BarCode
+import nz.eloque.foss_wallet.model.LocalizedPassWithTags
 import nz.eloque.foss_wallet.model.PassColors
 import nz.eloque.foss_wallet.model.PassCreator
 import nz.eloque.foss_wallet.model.PassRelevantDate
 import nz.eloque.foss_wallet.model.PassType
+import nz.eloque.foss_wallet.model.field.PassContent
+import nz.eloque.foss_wallet.model.field.PassField
 import nz.eloque.foss_wallet.ui.Screen
 import nz.eloque.foss_wallet.ui.components.ImagePicker
+import nz.eloque.foss_wallet.ui.components.Section
 import nz.eloque.foss_wallet.ui.screens.scan.ScanLauncher
 import nz.eloque.foss_wallet.ui.screens.settings.ComboBox
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
+import java.util.UUID
 
 @SuppressLint("LocalContextGetResourceValueCall")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,53 +110,105 @@ fun CreateView(
     navController: NavHostController,
     createViewModel: CreateViewModel,
     initialBarcode: BarCode? = null,
+    existingPass: LocalizedPassWithTags? = null,
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val coroutineScope = rememberCoroutineScope()
 
-    var iconUrl by remember { mutableStateOf<Uri?>(null) }
-    var logoUrl by remember { mutableStateOf<Uri?>(null) }
-    var stripUrl by remember { mutableStateOf<Uri?>(null) }
-    var thumbnailUrl by remember { mutableStateOf<Uri?>(null) }
-    var footerUrl by remember { mutableStateOf<Uri?>(null) }
+    val isEditing = existingPass != null
 
-    var name by remember { mutableStateOf("") }
-    var nameTouched by remember { mutableStateOf(false) }
-    var organization by remember { mutableStateOf("") }
-    var serialNumber by remember { mutableStateOf("") }
+    fun existingImageUri(fileName: String): Uri? =
+        existingPass?.pass?.id?.let { id ->
+            val file = java.io.File(context.filesDir, "$id/$fileName")
+            if (file.exists()) file.toUri() else null
+        }
+
+    var iconUrl by remember { mutableStateOf(existingImageUri("icon.png")) }
+    var logoUrl by remember { mutableStateOf(existingImageUri("logo.png")) }
+    var stripUrl by remember { mutableStateOf(existingImageUri("strip.png")) }
+    var thumbnailUrl by remember { mutableStateOf(existingImageUri("thumbnail.png")) }
+    var footerUrl by remember { mutableStateOf(existingImageUri("footer.png")) }
+
+    var name by remember { mutableStateOf(existingPass?.pass?.description ?: "") }
+    var nameTouched by remember { mutableStateOf(isEditing) }
+    var organization by remember {
+        mutableStateOf(
+            existingPass?.pass?.organization?.let {
+                if (it == PassCreator.ORGANIZATION) "" else it
+            } ?: "",
+        )
+    }
+    var serialNumber by remember {
+        mutableStateOf(
+            existingPass?.pass?.serialNumber?.let {
+                if (it == existingPass.pass.id) "" else it
+            } ?: "",
+        )
+    }
 
     var barcodes by remember {
         mutableStateOf(
-            initialBarcode?.let {
-                val draft =
-                    BarcodeDraft(
-                        message = it.message,
-                        altText = it.altText ?: it.message,
-                        format = it.format,
-                    )
-                listOf(draft)
+            existingPass?.pass?.barCodes?.map { bc ->
+                BarcodeDraft(message = bc.message, altText = bc.altText ?: bc.message, format = bc.format)
+            } ?: initialBarcode?.let {
+                listOf(BarcodeDraft(message = it.message, altText = it.altText ?: it.message, format = it.format))
             } ?: emptyList(),
         )
     }
     var activeBarcodeIndex by remember { mutableIntStateOf(0) }
-    var type by remember { mutableStateOf<PassType>(PassType.Generic) }
+    var type by remember { mutableStateOf(existingPass?.pass?.type ?: PassType.Generic) }
 
-    var location by remember { mutableStateOf<Location?>(null) }
-    var relevantStart by remember { mutableStateOf<ZonedDateTime?>(null) }
-    var relevantEnd by remember { mutableStateOf<ZonedDateTime?>(null) }
-    var expirationDate by remember { mutableStateOf<ZonedDateTime?>(null) }
+    var location by remember {
+        mutableStateOf<Location?>(
+            existingPass?.pass?.locations?.firstOrNull()?.let { loc ->
+                Location("").also { it.latitude = loc.latitude; it.longitude = loc.longitude }
+            },
+        )
+    }
+    var relevantStart by remember {
+        mutableStateOf<ZonedDateTime?>(
+            existingPass?.pass?.relevantDates?.firstOrNull()?.let {
+                when (it) {
+                    is PassRelevantDate.Date -> it.date
+                    is PassRelevantDate.DateInterval -> it.startDate
+                }
+            },
+        )
+    }
+    var relevantEnd by remember {
+        mutableStateOf<ZonedDateTime?>(
+            existingPass?.pass?.relevantDates?.firstOrNull()?.let {
+                if (it is PassRelevantDate.DateInterval) it.endDate else null
+            },
+        )
+    }
+    var expirationDate by remember { mutableStateOf(existingPass?.pass?.expirationDate) }
 
-    var backgroundColor by remember { mutableStateOf<Color?>(null) }
-    var foregroundColor by remember { mutableStateOf<Color?>(null) }
-    var labelColor by remember { mutableStateOf<Color?>(null) }
+    var backgroundColor by remember { mutableStateOf(existingPass?.pass?.colors?.background) }
+    var foregroundColor by remember { mutableStateOf(existingPass?.pass?.colors?.foreground) }
+    var labelColor by remember { mutableStateOf(existingPass?.pass?.colors?.label) }
+
+    var fields by remember {
+        mutableStateOf<List<FieldDraft>>(
+            existingPass?.pass?.run {
+                val all = mutableListOf<FieldDraft>()
+                headerFields.forEach { all.add(it.toFieldDraft(FieldCategory.Header)) }
+                primaryFields.forEach { all.add(it.toFieldDraft(FieldCategory.Primary)) }
+                secondaryFields.forEach { all.add(it.toFieldDraft(FieldCategory.Secondary)) }
+                auxiliaryFields.forEach { all.add(it.toFieldDraft(FieldCategory.Auxiliary)) }
+                backFields.forEach { all.add(it.toFieldDraft(FieldCategory.Back)) }
+                all.toList()
+            } ?: emptyList(),
+        )
+    }
 
     var showLocationPicker by remember { mutableStateOf(false) }
     var colorPickerTarget by remember { mutableStateOf<ColorTarget?>(null) }
 
     var isSaving by remember { mutableStateOf(false) }
-    var advancedExpanded by remember { mutableStateOf(false) }
-    var detailsExpanded by remember { mutableStateOf(false) }
+    var advancedExpanded by remember { mutableStateOf(isEditing) }
+    var detailsExpanded by remember { mutableStateOf(isEditing) }
 
     val barCodeModels =
         barcodes.map {
@@ -390,6 +449,32 @@ fun CreateView(
                         optionLabel = { resources.getString(it.label) },
                     )
 
+                    Section(heading = stringResource(R.string.pass_fields)) {
+                        fields.forEachIndexed { index, field ->
+                            FieldRow(
+                                field = field,
+                                onLabelChange = { fields = fields.mapIndexed { i, f -> if (i == index) f.copy(label = it) else f } },
+                                onValueChange = { fields = fields.mapIndexed { i, f -> if (i == index) f.copy(value = it) else f } },
+                                onCategoryChange = { fields = fields.mapIndexed { i, f -> if (i == index) f.copy(category = it) else f } },
+                                onDelete = { fields = fields.filterIndexed { i, _ -> i != index } },
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                fields = fields + FieldDraft(
+                                    key = UUID.randomUUID().toString().take(8),
+                                    label = "",
+                                    value = "",
+                                    category = FieldCategory.Primary,
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Text(stringResource(R.string.add_field))
+                        }
+                    }
+
                     ElevatedButton(
                         onClick = { advancedExpanded = !advancedExpanded },
                         modifier = Modifier.fillMaxWidth(),
@@ -468,6 +553,7 @@ fun CreateView(
                                 color = backgroundColor,
                                 onPick = { colorPickerTarget = ColorTarget.Background },
                                 onClear = { backgroundColor = null },
+                                onColorChange = { backgroundColor = it },
                             )
 
                             ColorPickerRow(
@@ -476,6 +562,7 @@ fun CreateView(
                                 color = foregroundColor,
                                 onPick = { colorPickerTarget = ColorTarget.Foreground },
                                 onClear = { foregroundColor = null },
+                                onColorChange = { foregroundColor = it },
                             )
 
                             ColorPickerRow(
@@ -484,6 +571,7 @@ fun CreateView(
                                 color = labelColor,
                                 onPick = { colorPickerTarget = ColorTarget.Label },
                                 onClear = { labelColor = null },
+                                onColorChange = { labelColor = it },
                             )
 
                             OutlinedTextField(
@@ -596,6 +684,11 @@ fun CreateView(
                                     )
                                 }
 
+                            fun List<FieldDraft>.toPassFields(cat: FieldCategory) =
+                                filter { it.category == cat }.map {
+                                    PassField(key = it.key, label = it.label.ifBlank { null }, content = PassContent.Plain(it.value))
+                                }
+
                             val savedPassId =
                                 createViewModel.savePass(
                                     name = name,
@@ -612,24 +705,39 @@ fun CreateView(
                                     stripUrl = stripUrl,
                                     thumbnailUrl = thumbnailUrl,
                                     footerUrl = footerUrl,
+                                    headerFields = fields.toPassFields(FieldCategory.Header),
+                                    primaryFields = fields.toPassFields(FieldCategory.Primary),
+                                    secondaryFields = fields.toPassFields(FieldCategory.Secondary),
+                                    auxiliaryFields = fields.toPassFields(FieldCategory.Auxiliary),
+                                    backFields = fields.toPassFields(FieldCategory.Back),
+                                    existingPassId = existingPass?.pass?.id,
+                                    existingAddedAt = existingPass?.pass?.addedAt,
                                 )
                             withContext(Dispatchers.Main) {
                                 isSaving = false
-                                navController.navigate("pass/$savedPassId") {
-                                    popUpTo(Screen.Wallet.route)
+                                if (isEditing) {
+                                    navController.navigate("pass/$savedPassId") {
+                                        popUpTo("edit/$savedPassId") { inclusive = true }
+                                    }
+                                } else {
+                                    navController.navigate("pass/$savedPassId") {
+                                        popUpTo(Screen.Wallet.route)
+                                    }
                                 }
                             }
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(stringResource(R.string.create_pass))
+                    Text(stringResource(if (isEditing) R.string.save_changes else R.string.create_pass))
                 }
-                Text(
-                    text = stringResource(R.string.created_pass_export_warning),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                if (!isEditing) {
+                    Text(
+                        text = stringResource(R.string.created_pass_export_warning),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
     }
@@ -680,46 +788,73 @@ private fun ColorPickerRow(
     color: Color?,
     onPick: () -> Unit,
     onClear: () -> Unit,
+    onColorChange: (Color) -> Unit,
 ) {
+    var hexInput by remember { mutableStateOf(color?.toHexColor() ?: "") }
+
+    LaunchedEffect(color) {
+        if (color != null) {
+            val canonical = color.toHexColor()
+            if (!hexInput.trimStart('#').equals(canonical.drop(1), ignoreCase = true)) {
+                hexInput = canonical
+            }
+        }
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(modifier = Modifier.weight(1f)) {
-            OutlinedTextField(
-                value = color?.toHexColor() ?: "",
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(label) },
-                textStyle =
-                    TextStyle(fontFamily = FontFamily.Monospace),
-                leadingIcon = {
-                    Row(
-                        modifier = Modifier.padding(start = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(imageVector = icon, contentDescription = label)
-                        Spacer(
-                            modifier =
-                                Modifier
-                                    .size(16.dp)
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(color ?: Color.Transparent),
-                        )
+        OutlinedTextField(
+            value = hexInput,
+            onValueChange = { raw ->
+                hexInput = raw
+                val stripped = raw.trimStart('#').uppercase()
+                val expanded =
+                    when (stripped.length) {
+                        3 -> stripped.flatMap { listOf(it, it) }.joinToString("")
+                        6 -> stripped
+                        else -> null
                     }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(
-                modifier =
-                    Modifier
-                        .matchParentSize()
-                        .clickable { onPick() },
-            )
-        }
-        IconButton(onClick = onClear, enabled = color != null) {
+                expanded?.let {
+                    try {
+                        val parsed = Color(android.graphics.Color.parseColor("#$it"))
+                        onColorChange(parsed.opaque())
+                    } catch (_: IllegalArgumentException) { }
+                }
+            },
+            label = { Text(label) },
+            textStyle = TextStyle(fontFamily = FontFamily.Monospace),
+            isError = hexInput.isNotEmpty() && color == null,
+            leadingIcon = {
+                Row(
+                    modifier =
+                        Modifier
+                            .padding(start = 10.dp)
+                            .clickable { onPick() },
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(imageVector = icon, contentDescription = label)
+                    Spacer(
+                        modifier =
+                            Modifier
+                                .size(16.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(color ?: Color.Transparent),
+                    )
+                }
+            },
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(
+            onClick = {
+                hexInput = ""
+                onClear()
+            },
+            enabled = color != null || hexInput.isNotEmpty(),
+        ) {
             Icon(
                 imageVector = Icons.Default.Clear,
                 contentDescription = stringResource(R.string.clear_selection),
@@ -957,13 +1092,86 @@ private enum class ColorTarget {
     Label,
 }
 
+private enum class FieldCategory {
+    Header,
+    Primary,
+    Secondary,
+    Auxiliary,
+    Back;
+
+    fun displayName(): String = name
+}
+
 private data class BarcodeDraft(
     val message: String,
     val altText: String,
     val format: BarcodeFormat,
 )
 
+private data class FieldDraft(
+    val key: String,
+    val label: String,
+    val value: String,
+    val category: FieldCategory,
+)
+
 private fun barcodeValid(barCode: BarCode): Boolean = barCode.encodeAsBitmap(100, 100, false) != null
+
+private fun PassField.toFieldDraft(category: FieldCategory): FieldDraft =
+    FieldDraft(key = key, label = label ?: "", value = content.prettyPrint(), category = category)
+
+@Composable
+private fun FieldRow(
+    field: FieldDraft,
+    onLabelChange: (String) -> Unit,
+    onValueChange: (String) -> Unit,
+    onCategoryChange: (FieldCategory) -> Unit,
+    onDelete: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedTextField(
+                    value = field.label,
+                    onValueChange = onLabelChange,
+                    label = { Text(stringResource(R.string.field_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = field.value,
+                    onValueChange = onValueChange,
+                    label = { Text(stringResource(R.string.field_value)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                ComboBox(
+                    title = stringResource(R.string.field_category),
+                    options = FieldCategory.entries,
+                    selectedOption = field.category,
+                    onOptionSelected = onCategoryChange,
+                    optionLabel = { it.displayName() },
+                )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Clear,
+                    contentDescription = stringResource(R.string.delete),
+                )
+            }
+        }
+        HorizontalDivider()
+    }
+}
 
 private fun Double.formatCoord(): String = String.format(Locale.current.platformLocale, "%.6f", this)
 

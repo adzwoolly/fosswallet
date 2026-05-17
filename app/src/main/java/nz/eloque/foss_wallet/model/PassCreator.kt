@@ -58,6 +58,8 @@ object PassCreator {
         secondaryFields: List<PassField> = emptyList(),
         auxiliaryFields: List<PassField> = emptyList(),
         backFields: List<PassField> = emptyList(),
+        existingId: String? = null,
+        existingAddedAt: Instant? = null,
     ): Pass? {
         if (barCodes.isEmpty()) {
             return null
@@ -75,7 +77,7 @@ object PassCreator {
             return null
         }
 
-        val id = Hash.sha256(barCodes.joinToString("|") { it.toString() })
+        val id = existingId ?: Hash.sha256(barCodes.joinToString("|") { it.toString() })
 
         return Pass(
             id = id,
@@ -85,7 +87,7 @@ object PassCreator {
             serialNumber = serialNumber.ifBlank { id },
             type = type,
             barCodes = LinkedHashSet(barCodes),
-            addedAt = Instant.now(),
+            addedAt = existingAddedAt ?: Instant.now(),
             logoText = name,
             colors = colors,
             locations = location?.let { listOf(it) } ?: emptyList(),

@@ -27,9 +27,11 @@ import nz.eloque.foss_wallet.model.PassColors
 import nz.eloque.foss_wallet.model.PassCreator
 import nz.eloque.foss_wallet.model.PassRelevantDate
 import nz.eloque.foss_wallet.model.PassType
+import nz.eloque.foss_wallet.model.field.PassField
 import nz.eloque.foss_wallet.persistence.PassStore
 import nz.eloque.foss_wallet.persistence.loader.PassBitmaps
 import nz.eloque.foss_wallet.utils.toBitmap
+import java.time.Instant
 import java.time.ZonedDateTime
 import java.util.Locale
 import kotlin.coroutines.resume
@@ -63,6 +65,13 @@ class CreateViewModel
             stripUrl: Uri?,
             thumbnailUrl: Uri?,
             footerUrl: Uri?,
+            headerFields: List<PassField> = emptyList(),
+            primaryFields: List<PassField> = emptyList(),
+            secondaryFields: List<PassField> = emptyList(),
+            auxiliaryFields: List<PassField> = emptyList(),
+            backFields: List<PassField> = emptyList(),
+            existingPassId: String? = null,
+            existingAddedAt: Instant? = null,
         ): String {
             val pass =
                 PassCreator.create(
@@ -75,6 +84,13 @@ class CreateViewModel
                     location = location,
                     relevantDates = relevantDates,
                     expirationDate = expirationDate,
+                    headerFields = headerFields,
+                    primaryFields = primaryFields,
+                    secondaryFields = secondaryFields,
+                    auxiliaryFields = auxiliaryFields,
+                    backFields = backFields,
+                    existingId = existingPassId,
+                    existingAddedAt = existingAddedAt,
                 )!!
 
             val drawable = ResourcesCompat.getDrawable(context.resources, R.drawable.icon, null)!!

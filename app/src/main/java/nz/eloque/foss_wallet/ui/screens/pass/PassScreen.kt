@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AppShortcut
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Unarchive
@@ -229,6 +230,17 @@ fun Actions(
             expanded = expanded.value,
             onDismissRequest = { expanded.value = false },
         ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.edit_pass)) },
+                leadingIcon = {
+                    Icon(imageVector = Icons.Default.Edit, contentDescription = stringResource(R.string.edit_pass))
+                },
+                onClick = {
+                    expanded.value = false
+                    navController.navigate("edit/${pass.id}")
+                },
+            )
+
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.add_shortcut)) },
                 leadingIcon = {
