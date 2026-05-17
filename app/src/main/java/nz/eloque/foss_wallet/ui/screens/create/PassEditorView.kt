@@ -1040,6 +1040,7 @@ private fun MetadataSheetContent(
             value = serialNumber,
             onValueChange = onSerialNumberChange,
             leadingIcon = { Icon(imageVector = Icons.Default.Badge, contentDescription = null) },
+            supportingText = { Text(stringResource(R.string.serial_number_desc), style = MaterialTheme.typography.bodySmall) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
         )
@@ -1051,6 +1052,7 @@ private fun MetadataSheetContent(
             onPick = onRelevantStartPick,
             onClear = onRelevantStartClear,
             clearEnabled = relevantStart != null,
+            supportingText = stringResource(R.string.pass_relevant_start_desc),
         )
         PickableOutlinedField(
             label = stringResource(R.string.pass_relevant_end),
@@ -1059,6 +1061,7 @@ private fun MetadataSheetContent(
             onPick = onRelevantEndPick,
             onClear = onRelevantEndClear,
             clearEnabled = relevantEnd != null,
+            supportingText = stringResource(R.string.pass_relevant_end_desc),
         )
         PickableOutlinedField(
             label = stringResource(R.string.pass_expiration_date),
@@ -1067,6 +1070,7 @@ private fun MetadataSheetContent(
             onPick = onExpirationPick,
             onClear = onExpirationClear,
             clearEnabled = expirationDate != null,
+            supportingText = stringResource(R.string.pass_expiration_date_desc),
         )
         PickableOutlinedField(
             label = stringResource(R.string.pass_location),
@@ -1089,6 +1093,7 @@ private fun PickableOutlinedField(
     onPick: () -> Unit,
     onClear: () -> Unit,
     clearEnabled: Boolean,
+    supportingText: String? = null,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -1101,6 +1106,7 @@ private fun PickableOutlinedField(
                 readOnly = true,
                 label = { Text(label) },
                 leadingIcon = { Icon(imageVector = leadingIcon, contentDescription = label) },
+                supportingText = supportingText?.let { { Text(it, style = MaterialTheme.typography.bodySmall) } },
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.matchParentSize().clickable { onPick() })

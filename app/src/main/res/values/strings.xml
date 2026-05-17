@@ -167,6 +167,10 @@
     <string name="zone_appearance_desc">Set the pass colors and visual styling.</string>
     <string name="metadata">Metadata</string>
     <string name="zone_metadata_desc">Pass information, dates and location used for relevancy.</string>
+    <string name="serial_number_desc">A unique identifier for this pass, assigned by the issuer. Can be any string.</string>
+    <string name="pass_relevant_start_desc">When the pass begins appearing in lock screen suggestions.</string>
+    <string name="pass_relevant_end_desc">After this date the pass is deprioritised but remains valid and usable.</string>
+    <string name="pass_expiration_date_desc">After this date the pass is marked as expired and greyed out in the wallet.</string>
     <string name="zone_footer_desc">An image displayed as the background behind the barcode.</string>
 
     <!-- Per-pass-type field hints shown in the field editor sheet -->
