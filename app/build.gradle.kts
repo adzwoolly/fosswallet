@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -17,6 +18,14 @@ kotlin {
     }
 }
 
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) load(f.inputStream())
+}
+
+fun localOrEnv(localKey: String, envKey: String): String? =
+    localProps.getProperty(localKey) ?: System.getenv(envKey)
+
 android {
     dependenciesInfo {
         // Disables dependency metadata when building APKs.
@@ -27,10 +36,16 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(System.getProperty("user.home") + "/work/_temp/keystore.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD")
-            keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
-            keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+            val storePath = localOrEnv("signing.storeFile", "KEYSTORE_PATH")
+            val storePass = localOrEnv("signing.storePassword", "KEYSTORE_PASSWORD")
+            val alias = localOrEnv("signing.keyAlias", "SIGNING_KEY_ALIAS")
+            val keyPass = localOrEnv("signing.keyPassword", "SIGNING_KEY_PASSWORD")
+            if (storePath != null) {
+                storeFile = file(storePath)
+                storePassword = storePass
+                keyAlias = alias
+                keyPassword = keyPass
+            }
         }
     }
     namespace = "nz.eloque.foss_wallet"
