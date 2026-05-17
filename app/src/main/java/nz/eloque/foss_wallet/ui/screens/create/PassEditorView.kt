@@ -316,9 +316,7 @@ fun PassEditorView(
             withContext(Dispatchers.Main) {
                 isSaving = false
                 if (isEditing) {
-                    navController.navigate("pass/$savedPassId") {
-                        popUpTo("edit/$savedPassId") { inclusive = true }
-                    }
+                    navController.popBackStack("pass/$savedPassId", inclusive = false)
                 } else {
                     navController.navigate("pass/$savedPassId") {
                         popUpTo(Screen.Wallet.route)
