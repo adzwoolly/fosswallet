@@ -13,3 +13,4 @@ local.properties
 fosswallet
 fosswallet-1-link
 keystore.jks
+build-release.sh
