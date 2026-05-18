@@ -75,7 +75,9 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.intl.Locale
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.navigation.NavHostController
@@ -184,6 +186,7 @@ fun PassEditorView(
         )
     }
     var expirationDate by remember { mutableStateOf(existingPass?.pass?.expirationDate) }
+    var maxDistance by remember { mutableStateOf(existingPass?.pass?.maxDistance?.toString() ?: "") }
 
     var backgroundColor by remember { mutableStateOf(existingPass?.pass?.colors?.background) }
     var foregroundColor by remember { mutableStateOf(existingPass?.pass?.colors?.foreground) }
@@ -310,6 +313,7 @@ fun PassEditorView(
                     },
                     relevantDates = relevantDates,
                     expirationDate = expirationDate,
+                    maxDistance = maxDistance.toDoubleOrNull(),
                     iconUrl = iconUrl,
                     logoUrl = logoUrl,
                     stripUrl = stripUrl,
@@ -631,6 +635,7 @@ fun PassEditorView(
                         relevantStart = relevantStart,
                         relevantEnd = relevantEnd,
                         expirationDate = expirationDate,
+                        maxDistance = maxDistance,
                         locationDrafts = locationDrafts,
                         createViewModel = createViewModel,
                         onOrganizationChange = { organization = it },
@@ -641,6 +646,7 @@ fun PassEditorView(
                         onRelevantEndClear = { relevantEnd = null },
                         onExpirationPick = { openDateTimePicker(context, expirationDate) { expirationDate = it } },
                         onExpirationClear = { expirationDate = null },
+                        onMaxDistanceChange = { maxDistance = it },
                         onLocationAdd = { locationDrafts = locationDrafts + LocationDraft() },
                         onLocationDelete = { index -> locationDrafts = locationDrafts.filterIndexed { i, _ -> i != index } },
                         onLocationChange = { index, coords -> locationDrafts = locationDrafts.mapIndexed { i, d -> if (i == index) d.copy(coords = coords) else d } },
@@ -996,6 +1002,7 @@ private fun MetadataSheetContent(
     relevantStart: ZonedDateTime?,
     relevantEnd: ZonedDateTime?,
     expirationDate: ZonedDateTime?,
+    maxDistance: String,
     locationDrafts: List<LocationDraft>,
     createViewModel: CreateViewModel,
     onOrganizationChange: (String) -> Unit,
@@ -1006,6 +1013,7 @@ private fun MetadataSheetContent(
     onRelevantEndClear: () -> Unit,
     onExpirationPick: () -> Unit,
     onExpirationClear: () -> Unit,
+    onMaxDistanceChange: (String) -> Unit,
     onLocationAdd: () -> Unit,
     onLocationDelete: (Int) -> Unit,
     onLocationChange: (Int, String) -> Unit,
@@ -1073,6 +1081,15 @@ private fun MetadataSheetContent(
             onClear = onExpirationClear,
             clearEnabled = expirationDate != null,
             supportingText = stringResource(R.string.pass_expiration_date_desc),
+        )
+        OutlinedTextField(
+            label = { Text(stringResource(R.string.pass_max_distance)) },
+            value = maxDistance,
+            onValueChange = onMaxDistanceChange,
+            leadingIcon = { Icon(imageVector = Icons.Default.LocationOn, contentDescription = null) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         )
 
         locationDrafts.forEachIndexed { index, draft ->

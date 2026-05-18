@@ -28,6 +28,11 @@ import nz.eloque.foss_wallet.model.PassCreator
 import nz.eloque.foss_wallet.model.PassRelevantDate
 import nz.eloque.foss_wallet.model.PassType
 import nz.eloque.foss_wallet.model.field.PassField
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.location.LocationManager
+import androidx.core.content.ContextCompat
+import nz.eloque.foss_wallet.api.NearbyPassEvaluator
 import nz.eloque.foss_wallet.persistence.PassStore
 import nz.eloque.foss_wallet.persistence.loader.PassBitmaps
 import nz.eloque.foss_wallet.utils.toBitmap
@@ -43,6 +48,7 @@ class CreateViewModel
         application: Application,
         @param:ApplicationContext private val context: Context,
         private val passStore: PassStore,
+        private val nearbyPassEvaluator: NearbyPassEvaluator,
     ) : AndroidViewModel(application) {
         data class GeocodeResult(
             val displayName: String,
@@ -60,6 +66,7 @@ class CreateViewModel
             locations: List<Location> = emptyList(),
             relevantDates: List<PassRelevantDate>,
             expirationDate: ZonedDateTime?,
+            maxDistance: Double? = null,
             iconUrl: Uri?,
             logoUrl: Uri?,
             stripUrl: Uri?,
@@ -84,6 +91,7 @@ class CreateViewModel
                     locations = locations,
                     relevantDates = relevantDates,
                     expirationDate = expirationDate,
+                    maxDistance = maxDistance,
                     headerFields = headerFields,
                     primaryFields = primaryFields,
                     secondaryFields = secondaryFields,
@@ -124,6 +132,8 @@ class CreateViewModel
                 bitmaps = bitmaps,
             )
 
+            reevaluateNearby()
+
             return pass.id
         }
 
@@ -163,6 +173,19 @@ class CreateViewModel
             private const val STRIP_SIZE = 1024
             private const val THUMBNAIL_SIZE = 512
             private const val FOOTER_SIZE = 768
+        }
+
+        @SuppressLint("MissingPermission")
+        private suspend fun reevaluateNearby() {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.ACCESS_COARSE_LOCATION,
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!hasPermission) return
+
+            val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                ?: locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            location?.let { nearbyPassEvaluator.evaluate(it) }
         }
 
         suspend fun geocode(query: String): List<GeocodeResult> {

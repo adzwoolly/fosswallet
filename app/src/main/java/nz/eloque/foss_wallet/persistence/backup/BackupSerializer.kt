@@ -48,6 +48,7 @@ object BackupSerializer {
             pass.colors?.let { put("colors", colorsToJson(it)) }
             put("relevantDates", relevantDatesToJson(pass.relevantDates))
             pass.expirationDate?.let { put("expirationDate", it.toString()) }
+            pass.maxDistance?.let { put("maxDistance", it) }
             pass.logoText?.let { put("logoText", it) }
             pass.authToken?.let { put("authToken", it) }
             pass.webServiceUrl?.let { put("webServiceUrl", it) }
@@ -117,6 +118,7 @@ object BackupSerializer {
             colors = colors,
             relevantDates = relevantDates,
             expirationDate = json.stringOrNull("expirationDate")?.let { ZonedDateTime.parse(it) },
+            maxDistance = if (json.has("maxDistance")) json.getDouble("maxDistance") else null,
             logoText = json.stringOrNull("logoText"),
             authToken = json.stringOrNull("authToken"),
             webServiceUrl = json.stringOrNull("webServiceUrl"),

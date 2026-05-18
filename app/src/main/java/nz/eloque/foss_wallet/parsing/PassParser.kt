@@ -106,6 +106,7 @@ class PassParser(
             addedAt = addedAt,
             relevantDates = parseRelevantDates(passJson),
             expirationDate = parseExpiration(passJson),
+            maxDistance = passJson.optDouble("maxDistance").takeIf { !it.isNaN() },
             logoText = passJson.stringOrNull("logoText"),
             authToken = passJson.stringOrNull("authenticationToken"),
             webServiceUrl = passJson.stringOrNull("webServiceURL"),

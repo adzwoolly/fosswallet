@@ -34,6 +34,7 @@ data class Pass(
     val colors: PassColors? = null,
     val relevantDates: List<PassRelevantDate> = LinkedList(),
     val expirationDate: ZonedDateTime? = null,
+    val maxDistance: Double? = null,
     val logoText: String? = null,
     val authToken: String? = null,
     val webServiceUrl: String? = null,

@@ -11,18 +11,12 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import nz.eloque.foss_wallet.notifications.NotificationService
-import nz.eloque.foss_wallet.persistence.NearbyPassesStore
-import nz.eloque.foss_wallet.persistence.PassStore
 
 @AndroidEntryPoint
 class LocationUpdateReceiver : BroadcastReceiver() {
 
-    @Inject lateinit var passStore: PassStore
-    @Inject lateinit var nearbyPassesStore: NearbyPassesStore
-    @Inject lateinit var notificationService: NotificationService
+    @Inject lateinit var nearbyPassEvaluator: NearbyPassEvaluator
 
     override fun onReceive(context: Context, intent: Intent) {
         val location: Location = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -35,14 +29,7 @@ class LocationUpdateReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             try {
-                val allPasses = passStore.allPasses().first().filter { !it.metadata.archived }
-                val nearby = allPasses.mapNotNull { localizedPass ->
-                    val matchedLoc = localizedPass.pass.locations.firstOrNull { loc -> location.distanceTo(loc) <= 100f }
-                    matchedLoc?.let { localizedPass.pass to it }
-                }
-                nearbyPassesStore.setNearbyPassIds(nearby.map { it.first.id }.toSet())
-                notificationService.createNearbyNotificationChannel()
-                notificationService.updateNearbyNotifications(nearby)
+                nearbyPassEvaluator.evaluate(location)
             } finally {
                 pendingResult.finish()
             }
