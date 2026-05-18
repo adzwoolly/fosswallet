@@ -217,4 +217,12 @@
     <string name="backup_import_success">Backup imported</string>
     <string name="backup_import_error">Failed to import backup</string>
     <string name="created_pass_export_warning_backup">The full backup export includes all passes, tags, groups, and settings. The .pkpasses export only includes passes imported from external sources.</string>
+
+    <string name="nearby_passes_channel">Nearby passes</string>
+    <string name="nearby_passes_channel_description">Silent alerts when a pass is relevant to your location</string>
+    <string name="pass_nearby">Nearby</string>
+    <string name="location_enabled">Location-based suggestions</string>
+    <string name="location_enabled_subtitle">Surface passes when you\'re within 50m of their location. Requires \"Allow all the time\" location permission.</string>
+    <string name="nearby_header">Nearby</string>
+    <string name="nearby_pass">Nearby pass</string>
 </resources>

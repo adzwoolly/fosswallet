@@ -17,6 +17,7 @@ import nz.eloque.foss_wallet.model.Pass
 import nz.eloque.foss_wallet.model.SortOption
 import nz.eloque.foss_wallet.model.Tag
 import nz.eloque.foss_wallet.persistence.BarcodePosition
+import nz.eloque.foss_wallet.persistence.NearbyPassesStore
 import nz.eloque.foss_wallet.persistence.PassStore
 import nz.eloque.foss_wallet.persistence.SettingsStore
 import nz.eloque.foss_wallet.persistence.loader.PassLoadResult
@@ -34,6 +35,7 @@ class WalletViewModel
         private val passStore: PassStore,
         private val tagRepository: TagRepository,
         val settingsStore: SettingsStore,
+        private val nearbyPassesStore: NearbyPassesStore,
     ) : AndroidViewModel(application) {
         private val baseQueryState = MutableStateFlow(QueryState())
         private val queryState: StateFlow<QueryState> = baseQueryState.asStateFlow()
@@ -42,6 +44,8 @@ class WalletViewModel
         val filteredPasses = queryState.flatMapMerge { passStore.filtered(it.query) }
 
         val allTags = tagRepository.all()
+
+        val nearbyPassIds = nearbyPassesStore.nearbyPassIds
 
         private val _sortOptionState: MutableStateFlow<SortOption> = MutableStateFlow(SortOption.TimeAdded)
         val sortOptionState = _sortOptionState.asStateFlow()

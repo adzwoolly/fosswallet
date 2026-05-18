@@ -1,5 +1,10 @@
 package nz.eloque.foss_wallet.ui.screens.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -9,8 +14,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Save
@@ -29,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.Dispatchers
@@ -66,6 +70,23 @@ fun SettingsView(settingsViewModel: SettingsViewModel) {
             uri ?: return@rememberLauncherForActivityResult
             coroutineScope.launch(Dispatchers.IO) {
                 context.contentResolver.openInputStream(uri)?.use { settingsViewModel.importBackup(it) }
+            }
+        }
+
+    val backgroundPermLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) coroutineScope.launch(Dispatchers.IO) { settingsViewModel.enableLocation(true) }
+        }
+
+    val foregroundPermLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+            val foregroundGranted = results.values.any { it }
+            if (foregroundGranted) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    backgroundPermLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                } else {
+                    coroutineScope.launch(Dispatchers.IO) { settingsViewModel.enableLocation(true) }
+                }
             }
         }
 
@@ -129,6 +150,31 @@ fun SettingsView(settingsViewModel: SettingsViewModel) {
             )
         }
         Section(
+            heading = stringResource(R.string.location_enabled),
+        ) {
+            SettingsSwitch(
+                title = stringResource(R.string.location_enabled),
+                subtitle = stringResource(R.string.location_enabled_subtitle),
+                checked = settings.value.locationEnabled,
+                onCheckedChange = { on ->
+                    if (on) {
+                        if (isLocationPermissionGranted(context)) {
+                            coroutineScope.launch(Dispatchers.IO) { settingsViewModel.enableLocation(true) }
+                        } else {
+                            foregroundPermLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                ),
+                            )
+                        }
+                    } else {
+                        coroutineScope.launch(Dispatchers.IO) { settingsViewModel.enableLocation(false) }
+                    }
+                },
+            )
+        }
+        Section(
             heading = stringResource(R.string.delete),
         ) {
             SettingsSwitch(
@@ -169,8 +215,28 @@ fun SettingsView(settingsViewModel: SettingsViewModel) {
                 modifier = Modifier.padding(16.dp),
             )
         }
+        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+        Text(
+            text = "${context.packageName} ${packageInfo.versionName}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .fillMaxWidth(),
+        )
         Spacer(modifier = Modifier.imePadding())
     }
+}
+
+private fun isLocationPermissionGranted(context: android.content.Context): Boolean {
+    val foreground = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    val background = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
+    } else {
+        true
+    }
+    return foreground && background
 }
 
 private fun isNaturalNumber(value: String): Boolean =
