@@ -10,9 +10,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import nz.eloque.foss_wallet.api.UpdateScheduler
+import nz.eloque.foss_wallet.persistence.backup.BackupStore
 import nz.eloque.foss_wallet.persistence.BarcodePosition
 import nz.eloque.foss_wallet.persistence.PassStore
 import nz.eloque.foss_wallet.persistence.SettingsStore
+import java.io.InputStream
+import java.io.OutputStream
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -33,6 +36,7 @@ class SettingsViewModel
         private val settingsStore: SettingsStore,
         private val passStore: PassStore,
         private val updateScheduler: UpdateScheduler,
+        private val backupStore: BackupStore,
     ) : AndroidViewModel(application) {
         private val _uiState = MutableStateFlow(SettingsUiState())
         val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
@@ -87,4 +91,8 @@ class SettingsViewModel
             settingsStore.setDeleteConfirmationEnabled(enabled)
             update()
         }
+
+        suspend fun exportBackup(outputStream: OutputStream) = backupStore.exportBackup(outputStream)
+
+        suspend fun importBackup(inputStream: InputStream) = backupStore.importBackup(inputStream)
     }

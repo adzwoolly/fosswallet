@@ -211,4 +211,10 @@
     <string name="add_attachment">Add attachment</string>
     <string name="delete_attachment">Delete attachment</string>
     <string name="attachments">Attachments</string>
+    <string name="export_backup">Export full backup (.fosswallet)</string>
+    <string name="import_backup">Import backup</string>
+    <string name="backup_export_success">Backup exported</string>
+    <string name="backup_import_success">Backup imported</string>
+    <string name="backup_import_error">Failed to import backup</string>
+    <string name="created_pass_export_warning_backup">The full backup export includes all passes, tags, groups, and settings. The .pkpasses export only includes passes imported from external sources.</string>
 </resources>
