@@ -37,7 +37,7 @@ class LocationUpdateReceiver : BroadcastReceiver() {
             try {
                 val allPasses = passStore.allPasses().first().filter { !it.metadata.archived }
                 val nearby = allPasses.mapNotNull { localizedPass ->
-                    val matchedLoc = localizedPass.pass.locations.firstOrNull { loc -> location.distanceTo(loc) <= 50f }
+                    val matchedLoc = localizedPass.pass.locations.firstOrNull { loc -> location.distanceTo(loc) <= 100f }
                     matchedLoc?.let { localizedPass.pass to it }
                 }
                 nearbyPassesStore.setNearbyPassIds(nearby.map { it.first.id }.toSet())

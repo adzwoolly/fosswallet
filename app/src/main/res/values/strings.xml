@@ -223,7 +223,7 @@
     <string name="nearby_passes_channel_description">Silent alerts when a pass is relevant to your location</string>
     <string name="pass_nearby">Nearby</string>
     <string name="location_enabled">Location-based suggestions</string>
-    <string name="location_enabled_subtitle">Surface passes when you\'re within 50m of their location. Requires \"Allow all the time\" location permission.</string>
+    <string name="location_enabled_subtitle">Surface passes when you\'re within 100m of their location. Requires \"Allow all the time\" location permission.</string>
     <string name="nearby_header">Nearby</string>
     <string name="nearby_pass">Nearby pass</string>
 </resources>
