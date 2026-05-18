@@ -86,6 +86,8 @@ fun WalletView(
     val passTypesToShow = remember { PassType.all().toMutableStateList() }
 
     val sortOption = walletViewModel.sortOptionState.collectAsState().value
+    val nearbyPassIds by walletViewModel.nearbyPassIds.collectAsState()
+    val locationEnabled = walletViewModel.settingsStore.isLocationEnabled()
 
     val tagToFilterFor = remember { mutableStateOf<Tag?>(null) }
     val passToDelete = remember { mutableStateOf<LocalizedPassWithTags?>(null) }
@@ -147,6 +149,8 @@ fun WalletView(
     ) {
         val groups = sortedPasses.filter { it.first != null }
         val ungrouped = sortedPasses.filter { it.first == null }.flatMap { it.second }
+        val nearbyUngrouped = if (locationEnabled) ungrouped.filter { it.pass.id in nearbyPassIds } else emptyList()
+        val regularUngrouped = ungrouped.filter { it !in nearbyUngrouped }
 
         item {
             FilterBlock(
@@ -169,7 +173,52 @@ fun WalletView(
                 selectedPasses = selectedPasses,
             )
         }
-        items(ungrouped) { pass ->
+
+        if (nearbyUngrouped.isNotEmpty()) {
+            item(key = "nearby_header") {
+                Text(
+                    text = stringResource(R.string.nearby_header),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp),
+                )
+            }
+            items(nearbyUngrouped, key = { "nearby_${it.pass.id}" }) { pass ->
+                val isSelectionMode = selectedPasses.isNotEmpty()
+                SwipeToDismiss(
+                    leftSwipeBackground = {
+                        Icon(imageVector = if (archive) Icons.Default.Unarchive else Icons.Default.Archive, contentDescription = null)
+                    },
+                    rightSwipeBackground = {
+                        Icon(imageVector = Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                    },
+                    allowLeftSwipe = !isSelectionMode,
+                    allowRightSwipe = !isSelectionMode,
+                    onLeftSwipe = { if (archive) walletViewModel.unarchive(pass.pass) else walletViewModel.archive(pass.pass) },
+                    onRightSwipe = { passToDelete.value = pass },
+                    modifier = Modifier.padding(2.dp),
+                ) {
+                    ShortPassCard(
+                        pass = pass,
+                        allTags = tags,
+                        isNearby = true,
+                        onClick = {
+                            if (selectedPasses.isNotEmpty()) {
+                                if (selectedPasses.contains(pass)) selectedPasses.remove(pass) else selectedPasses.add(pass)
+                            } else {
+                                navController.navigate("pass/${pass.pass.id}")
+                            }
+                        },
+                        onLongClick = {
+                            if (selectedPasses.contains(pass)) selectedPasses.remove(pass) else selectedPasses.add(pass)
+                        },
+                        selected = selectedPasses.contains(pass),
+                    )
+                }
+            }
+        }
+
+        items(regularUngrouped, key = { it.pass.id }) { pass ->
             val isSelectionMode = selectedPasses.isNotEmpty()
             SwipeToDismiss(
                 leftSwipeBackground = {
