@@ -33,6 +33,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CalendarToday
@@ -43,6 +44,7 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -154,11 +156,11 @@ fun PassEditorView(
     }
     var type by remember { mutableStateOf(existingPass?.pass?.type ?: PassType.Generic) }
 
-    var location by remember {
-        mutableStateOf<Location?>(
-            existingPass?.pass?.locations?.firstOrNull()?.let { loc ->
-                Location("").also { it.latitude = loc.latitude; it.longitude = loc.longitude }
-            },
+    var locationDrafts by remember {
+        mutableStateOf<List<String>>(
+            existingPass?.pass?.locations?.map { loc ->
+                "${loc.latitude.formatCoord()}, ${loc.longitude.formatCoord()}"
+            } ?: emptyList(),
         )
     }
     var relevantStart by remember {
@@ -212,7 +214,6 @@ fun PassEditorView(
     var activeSheet by remember { mutableStateOf<EditorSheet?>(null) }
     var isSaving by remember { mutableStateOf(false) }
     var colorPickerTarget by remember { mutableStateOf<ColorTarget?>(null) }
-    var showLocationPicker by remember { mutableStateOf(false) }
 
     val barCodeModels =
         remember(barcodes) {
@@ -297,7 +298,7 @@ fun PassEditorView(
                     type = type,
                     barcodes = barCodeModels,
                     colors = colors,
-                    location = location,
+                    locations = locationDrafts.mapNotNull { parseLatLon(it) },
                     relevantDates = relevantDates,
                     expirationDate = expirationDate,
                     iconUrl = iconUrl,
@@ -324,18 +325,6 @@ fun PassEditorView(
                 }
             }
         }
-    }
-
-    if (showLocationPicker) {
-        LocationPickerDialog(
-            createViewModel = createViewModel,
-            initial = location,
-            onDismiss = { showLocationPicker = false },
-            onConfirm = {
-                location = it
-                showLocationPicker = false
-            },
-        )
     }
 
     colorPickerTarget?.let { target ->
@@ -459,6 +448,15 @@ fun PassEditorView(
                     maxLines = 1,
                 )
             }
+        }
+
+        OutlinedButton(
+            onClick = { activeSheet = EditorSheet.Metadata },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(imageVector = Icons.Default.Info, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.metadata))
         }
 
         Button(
@@ -593,17 +591,11 @@ fun PassEditorView(
 
                 EditorSheet.Appearance ->
                     AppearanceSheetContent(
-                        organization = organization,
-                        serialNumber = serialNumber,
                         backgroundColor = backgroundColor,
                         foregroundColor = foregroundColor,
                         labelColor = labelColor,
-                        relevantStart = relevantStart,
-                        relevantEnd = relevantEnd,
-                        expirationDate = expirationDate,
-                        location = location,
-                        onOrganizationChange = { organization = it },
-                        onSerialNumberChange = { serialNumber = it },
+                        footerUri = footerUrl,
+                        boardingPassActive = type is PassType.Boarding,
                         onColorPick = { colorPickerTarget = it },
                         onColorClear = { target ->
                             when (target) {
@@ -619,18 +611,30 @@ fun PassEditorView(
                                 ColorTarget.Label -> labelColor = color
                             }
                         },
+                        onFooterChoose = { footerUrl = it },
+                        onFooterClear = { footerUrl = null },
+                    )
+
+                EditorSheet.Metadata ->
+                    MetadataSheetContent(
+                        organization = organization,
+                        serialNumber = serialNumber,
+                        relevantStart = relevantStart,
+                        relevantEnd = relevantEnd,
+                        expirationDate = expirationDate,
+                        locationDrafts = locationDrafts,
+                        createViewModel = createViewModel,
+                        onOrganizationChange = { organization = it },
+                        onSerialNumberChange = { serialNumber = it },
                         onRelevantStartPick = { openDateTimePicker(context, relevantStart) { relevantStart = it } },
                         onRelevantStartClear = { relevantStart = null },
                         onRelevantEndPick = { openDateTimePicker(context, relevantEnd) { relevantEnd = it } },
                         onRelevantEndClear = { relevantEnd = null },
                         onExpirationPick = { openDateTimePicker(context, expirationDate) { expirationDate = it } },
                         onExpirationClear = { expirationDate = null },
-                        onLocationPick = { showLocationPicker = true },
-                        onLocationClear = { location = null },
-                        footerUri = footerUrl,
-                        onFooterChoose = { footerUrl = it },
-                        onFooterClear = { footerUrl = null },
-                        boardingPassActive = type is PassType.Boarding,
+                        onLocationAdd = { locationDrafts = locationDrafts + "" },
+                        onLocationDelete = { index -> locationDrafts = locationDrafts.filterIndexed { i, _ -> i != index } },
+                        onLocationChange = { index, text -> locationDrafts = locationDrafts.mapIndexed { i, s -> if (i == index) text else s } },
                     )
             }
         }
@@ -900,35 +904,17 @@ private fun BarcodeSheetContent(
 
 @Composable
 private fun AppearanceSheetContent(
-    organization: String,
-    serialNumber: String,
     backgroundColor: Color?,
     foregroundColor: Color?,
     labelColor: Color?,
-    relevantStart: ZonedDateTime?,
-    relevantEnd: ZonedDateTime?,
-    expirationDate: ZonedDateTime?,
-    location: Location?,
     footerUri: Uri?,
     boardingPassActive: Boolean,
-    onOrganizationChange: (String) -> Unit,
-    onSerialNumberChange: (String) -> Unit,
     onColorPick: (ColorTarget) -> Unit,
     onColorClear: (ColorTarget) -> Unit,
     onColorChange: (ColorTarget, Color) -> Unit,
-    onRelevantStartPick: () -> Unit,
-    onRelevantStartClear: () -> Unit,
-    onRelevantEndPick: () -> Unit,
-    onRelevantEndClear: () -> Unit,
-    onExpirationPick: () -> Unit,
-    onExpirationClear: () -> Unit,
-    onLocationPick: () -> Unit,
-    onLocationClear: () -> Unit,
     onFooterChoose: (Uri?) -> Unit,
     onFooterClear: () -> Unit,
 ) {
-    val dtFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z")
-
     Column(
         modifier =
             Modifier
@@ -970,56 +956,6 @@ private fun AppearanceSheetContent(
             onColorChange = { onColorChange(ColorTarget.Label, it) },
         )
 
-        OutlinedTextField(
-            label = { Text(stringResource(R.string.organization)) },
-            value = organization,
-            onValueChange = onOrganizationChange,
-            leadingIcon = { Icon(imageVector = Icons.Default.Business, contentDescription = null) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-        )
-        OutlinedTextField(
-            label = { Text(stringResource(R.string.serial_number)) },
-            value = serialNumber,
-            onValueChange = onSerialNumberChange,
-            leadingIcon = { Icon(imageVector = Icons.Default.Badge, contentDescription = null) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-        )
-
-        PickableOutlinedField(
-            label = stringResource(R.string.pass_relevant_start),
-            value = relevantStart?.format(dtFormatter) ?: "",
-            leadingIcon = Icons.Default.CalendarToday,
-            onPick = onRelevantStartPick,
-            onClear = onRelevantStartClear,
-            clearEnabled = relevantStart != null,
-        )
-        PickableOutlinedField(
-            label = stringResource(R.string.pass_relevant_end),
-            value = relevantEnd?.format(dtFormatter) ?: "",
-            leadingIcon = Icons.Default.CalendarToday,
-            onPick = onRelevantEndPick,
-            onClear = onRelevantEndClear,
-            clearEnabled = relevantEnd != null,
-        )
-        PickableOutlinedField(
-            label = stringResource(R.string.pass_expiration_date),
-            value = expirationDate?.format(dtFormatter) ?: "",
-            leadingIcon = Icons.Default.CalendarToday,
-            onPick = onExpirationPick,
-            onClear = onExpirationClear,
-            clearEnabled = expirationDate != null,
-        )
-        PickableOutlinedField(
-            label = stringResource(R.string.pass_location),
-            value = location?.let { "${it.latitude.formatCoord()}, ${it.longitude.formatCoord()}" } ?: "",
-            leadingIcon = Icons.Default.LocationOn,
-            onPick = onLocationPick,
-            onClear = onLocationClear,
-            clearEnabled = location != null,
-        )
-
         if (boardingPassActive) {
             HorizontalDivider()
             Text(
@@ -1044,6 +980,156 @@ private fun AppearanceSheetContent(
 }
 
 @Composable
+private fun MetadataSheetContent(
+    organization: String,
+    serialNumber: String,
+    relevantStart: ZonedDateTime?,
+    relevantEnd: ZonedDateTime?,
+    expirationDate: ZonedDateTime?,
+    locationDrafts: List<String>,
+    createViewModel: CreateViewModel,
+    onOrganizationChange: (String) -> Unit,
+    onSerialNumberChange: (String) -> Unit,
+    onRelevantStartPick: () -> Unit,
+    onRelevantStartClear: () -> Unit,
+    onRelevantEndPick: () -> Unit,
+    onRelevantEndClear: () -> Unit,
+    onExpirationPick: () -> Unit,
+    onExpirationClear: () -> Unit,
+    onLocationAdd: () -> Unit,
+    onLocationDelete: (Int) -> Unit,
+    onLocationChange: (Int, String) -> Unit,
+) {
+    val dtFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z")
+
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(text = stringResource(R.string.metadata), style = MaterialTheme.typography.titleLarge)
+        Text(
+            text = stringResource(R.string.zone_metadata_desc),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        OutlinedTextField(
+            label = { Text(stringResource(R.string.organization)) },
+            value = organization,
+            onValueChange = onOrganizationChange,
+            leadingIcon = { Icon(imageVector = Icons.Default.Business, contentDescription = null) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+        )
+        OutlinedTextField(
+            label = { Text(stringResource(R.string.serial_number)) },
+            value = serialNumber,
+            onValueChange = onSerialNumberChange,
+            leadingIcon = { Icon(imageVector = Icons.Default.Badge, contentDescription = null) },
+            supportingText = { Text(stringResource(R.string.serial_number_desc), style = MaterialTheme.typography.bodySmall) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+        )
+
+        PickableOutlinedField(
+            label = stringResource(R.string.pass_relevant_start),
+            value = relevantStart?.format(dtFormatter) ?: "",
+            leadingIcon = Icons.Default.CalendarToday,
+            onPick = onRelevantStartPick,
+            onClear = onRelevantStartClear,
+            clearEnabled = relevantStart != null,
+            supportingText = stringResource(R.string.pass_relevant_start_desc),
+        )
+        PickableOutlinedField(
+            label = stringResource(R.string.pass_relevant_end),
+            value = relevantEnd?.format(dtFormatter) ?: "",
+            leadingIcon = Icons.Default.CalendarToday,
+            onPick = onRelevantEndPick,
+            onClear = onRelevantEndClear,
+            clearEnabled = relevantEnd != null,
+            supportingText = stringResource(R.string.pass_relevant_end_desc),
+        )
+        PickableOutlinedField(
+            label = stringResource(R.string.pass_expiration_date),
+            value = expirationDate?.format(dtFormatter) ?: "",
+            leadingIcon = Icons.Default.CalendarToday,
+            onPick = onExpirationPick,
+            onClear = onExpirationClear,
+            clearEnabled = expirationDate != null,
+            supportingText = stringResource(R.string.pass_expiration_date_desc),
+        )
+
+        locationDrafts.forEachIndexed { index, draft ->
+            LocationRow(
+                draft = draft,
+                createViewModel = createViewModel,
+                onTextChange = { onLocationChange(index, it) },
+                onDelete = { onLocationDelete(index) },
+            )
+        }
+
+        TextButton(
+            onClick = onLocationAdd,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.add_location))
+        }
+
+        Spacer(modifier = Modifier.navigationBarsPadding())
+    }
+}
+
+@Composable
+private fun LocationRow(
+    draft: String,
+    createViewModel: CreateViewModel,
+    onTextChange: (String) -> Unit,
+    onDelete: () -> Unit,
+) {
+    var searchShown by remember { mutableStateOf(false) }
+    val coordValid = draft.isBlank() || parseLatLon(draft) != null
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        OutlinedTextField(
+            value = draft,
+            onValueChange = onTextChange,
+            label = { Text(stringResource(R.string.latlon_input)) },
+            isError = !coordValid,
+            leadingIcon = {
+                IconButton(onClick = { searchShown = true }) {
+                    Icon(imageVector = Icons.Default.LocationOn, contentDescription = stringResource(R.string.location_search_query))
+                }
+            },
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+        )
+        IconButton(onClick = onDelete) {
+            Icon(imageVector = Icons.Default.Clear, contentDescription = stringResource(R.string.delete))
+        }
+    }
+
+    if (searchShown) {
+        LocationSearchDialog(
+            createViewModel = createViewModel,
+            onDismiss = { searchShown = false },
+            onConfirm = { coords ->
+                onTextChange(coords)
+                searchShown = false
+            },
+        )
+    }
+}
+
+@Composable
 private fun PickableOutlinedField(
     label: String,
     value: String,
@@ -1051,6 +1137,7 @@ private fun PickableOutlinedField(
     onPick: () -> Unit,
     onClear: () -> Unit,
     clearEnabled: Boolean,
+    supportingText: String? = null,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -1063,6 +1150,7 @@ private fun PickableOutlinedField(
                 readOnly = true,
                 label = { Text(label) },
                 leadingIcon = { Icon(imageVector = leadingIcon, contentDescription = label) },
+                supportingText = supportingText?.let { { Text(it, style = MaterialTheme.typography.bodySmall) } },
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.matchParentSize().clickable { onPick() })
@@ -1202,35 +1290,21 @@ private fun ColorPickerDialog(
 }
 
 @Composable
-private fun LocationPickerDialog(
+private fun LocationSearchDialog(
     createViewModel: CreateViewModel,
-    initial: Location?,
     onDismiss: () -> Unit,
-    onConfirm: (Location) -> Unit,
+    onConfirm: (String) -> Unit,
 ) {
-    val context = LocalContext.current
     val resources = LocalResources.current
     val coroutineScope = rememberCoroutineScope()
-
     var query by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var results by remember { mutableStateOf<List<CreateViewModel.GeocodeResult>>(emptyList()) }
-    var selected by remember {
-        mutableStateOf(
-            initial?.let {
-                CreateViewModel.GeocodeResult(
-                    displayName = "${it.latitude.formatCoord()}, ${it.longitude.formatCoord()}",
-                    latitude = it.latitude,
-                    longitude = it.longitude,
-                )
-            },
-        )
-    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.pass_location)) },
+        title = { Text(stringResource(R.string.location_search_query)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -1238,36 +1312,32 @@ private fun LocationPickerDialog(
                     value = query,
                     onValueChange = { query = it },
                     modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = {
-                            coroutineScope.launch(Dispatchers.IO) {
-                                isSearching = true
-                                error = null
-                                try {
-                                    results = createViewModel.geocode(query)
-                                    if (results.isEmpty()) error = resources.getString(R.string.no_search_results)
-                                } catch (e: Exception) {
-                                    error = e.message ?: resources.getString(R.string.exception)
-                                } finally {
-                                    isSearching = false
-                                }
+                Button(
+                    onClick = {
+                        coroutineScope.launch(Dispatchers.IO) {
+                            isSearching = true
+                            error = null
+                            try {
+                                results = createViewModel.geocode(query)
+                                if (results.isEmpty()) error = resources.getString(R.string.no_search_results)
+                            } catch (e: Exception) {
+                                error = e.message ?: resources.getString(R.string.exception)
+                            } finally {
+                                isSearching = false
                             }
-                        },
-                        enabled = query.isNotBlank() && !isSearching,
-                    ) {
-                        Text(if (isSearching) stringResource(R.string.searching) else stringResource(R.string.search))
-                    }
-                    TextButton(onClick = { selected = null }) {
-                        Text(stringResource(R.string.clear_selection))
-                    }
+                        }
+                    },
+                    enabled = query.isNotBlank() && !isSearching,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (isSearching) stringResource(R.string.searching) else stringResource(R.string.search))
                 }
                 error?.let { Text(it, color = Color.Red) }
-                selected?.let { Text(stringResource(R.string.selected_location, it.displayName)) }
                 results.forEach { result ->
                     ElevatedButton(
-                        onClick = { selected = result },
+                        onClick = { onConfirm("${result.latitude.formatCoord()}, ${result.longitude.formatCoord()}") },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(result.displayName)
@@ -1275,23 +1345,20 @@ private fun LocationPickerDialog(
                 }
             }
         },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    selected?.let {
-                        val loc = Location("").apply { latitude = it.latitude; longitude = it.longitude }
-                        onConfirm(loc)
-                    }
-                },
-                enabled = selected != null,
-            ) {
-                Text(stringResource(R.string.save))
-            }
-        },
+        confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.back)) }
         },
     )
+}
+
+private fun parseLatLon(input: String): Location? {
+    val parts = input.split(",").map { it.trim() }
+    if (parts.size != 2) return null
+    val lat = parts[0].toDoubleOrNull() ?: return null
+    val lon = parts[1].toDoubleOrNull() ?: return null
+    if (lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0) return null
+    return Location("").apply { latitude = lat; longitude = lon }
 }
 
 private fun openDateTimePicker(

@@ -114,6 +114,8 @@ class TypeConverters {
             val locJson = JSONObject()
             locJson.put("latitude", it.latitude)
             locJson.put("longitude", it.longitude)
+            it.extras?.getString("relevantText")?.takeIf { t -> t.isNotEmpty() }
+                ?.let { t -> locJson.put("relevantText", t) }
             json.put(locJson)
         }
         return json.toString()
@@ -125,6 +127,8 @@ class TypeConverters {
             val location = Location("")
             location.latitude = it.getDouble("latitude")
             location.longitude = it.getDouble("longitude")
+            val text = it.optString("relevantText", "")
+            if (text.isNotEmpty()) location.extras = android.os.Bundle().apply { putString("relevantText", text) }
             location
         }
 

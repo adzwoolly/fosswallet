@@ -2,6 +2,7 @@ package nz.eloque.foss_wallet.parsing
 
 import android.content.Context
 import android.location.Location
+import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.ui.graphics.Color
@@ -79,6 +80,8 @@ class PassParser(
                     Location("").also {
                         it.latitude = locJson.getDouble("latitude")
                         it.longitude = locJson.getDouble("longitude")
+                        val text = locJson.optString("relevantText", "")
+                        if (text.isNotEmpty()) it.extras = Bundle().apply { putString("relevantText", text) }
                     }
                 }
             } else {
