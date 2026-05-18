@@ -36,12 +36,13 @@ class LocationUpdateReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             try {
                 val allPasses = passStore.allPasses().first().filter { !it.metadata.archived }
-                val nearby = allPasses.filter { localizedPass ->
-                    localizedPass.pass.locations.any { loc -> location.distanceTo(loc) <= 50f }
+                val nearby = allPasses.mapNotNull { localizedPass ->
+                    val matchedLoc = localizedPass.pass.locations.firstOrNull { loc -> location.distanceTo(loc) <= 50f }
+                    matchedLoc?.let { localizedPass.pass to it }
                 }
-                nearbyPassesStore.setNearbyPassIds(nearby.map { it.pass.id }.toSet())
+                nearbyPassesStore.setNearbyPassIds(nearby.map { it.first.id }.toSet())
                 notificationService.createNearbyNotificationChannel()
-                notificationService.updateNearbyNotifications(nearby.map { it.pass })
+                notificationService.updateNearbyNotifications(nearby)
             } finally {
                 pendingResult.finish()
             }

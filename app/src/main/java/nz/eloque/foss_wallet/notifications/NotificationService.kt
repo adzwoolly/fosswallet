@@ -15,6 +15,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import nz.eloque.foss_wallet.MainActivity
 import nz.eloque.foss_wallet.R
+import android.location.Location
 import nz.eloque.foss_wallet.model.Pass
 import nz.eloque.foss_wallet.shortcut.Shortcut
 import kotlin.random.Random
@@ -70,19 +71,21 @@ class NotificationService
             notificationManager.createNotificationChannel(channel)
         }
 
-        fun updateNearbyNotifications(passes: List<Pass>) {
+        fun updateNearbyNotifications(nearby: List<Pair<Pass, Location>>) {
             if (PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)) return
 
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val notificationManagerCompat = NotificationManagerCompat.from(context)
 
-            val currentIds = passes.map { it.id.hashCode() }.toSet()
+            val currentIds = nearby.map { (pass, _) -> pass.id.hashCode() }.toSet()
             notificationManager.activeNotifications
                 .filter { it.notification.channelId == NEARBY_CHANNEL_ID }
                 .filter { it.id !in currentIds }
                 .forEach { notificationManagerCompat.cancel(it.id) }
 
-            passes.forEach { pass ->
+            nearby.forEach { (pass, matchedLocation) ->
+                val relevantText = matchedLocation.extras?.getString("relevantText")?.takeIf { it.isNotBlank() }
+
                 val pendingIntent = PendingIntent.getActivity(
                     context,
                     pass.id.hashCode(),
@@ -98,8 +101,8 @@ class NotificationService
 
                 val notification = NotificationCompat.Builder(context, NEARBY_CHANNEL_ID)
                     .setSmallIcon(R.drawable.icon)
-                    .setContentTitle(context.getString(R.string.pass_nearby))
-                    .setContentText(pass.description)
+                    .setContentTitle(pass.description)
+                    .setContentText(relevantText ?: context.getString(R.string.pass_nearby))
                     .setPriority(NotificationCompat.PRIORITY_LOW)
                     .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
                     .setPublicVersion(publicVersion)

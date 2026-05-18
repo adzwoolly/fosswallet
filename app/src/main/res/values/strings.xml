@@ -218,6 +218,7 @@
     <string name="backup_import_error">Failed to import backup</string>
     <string name="created_pass_export_warning_backup">The full backup export includes all passes, tags, groups, and settings. The .pkpasses export only includes passes imported from external sources.</string>
 
+    <string name="location_relevant_text">Nearby label (optional)</string>
     <string name="nearby_passes_channel">Nearby passes</string>
     <string name="nearby_passes_channel_description">Silent alerts when a pass is relevant to your location</string>
     <string name="pass_nearby">Nearby</string>

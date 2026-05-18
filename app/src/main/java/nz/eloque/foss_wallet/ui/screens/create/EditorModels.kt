@@ -18,6 +18,11 @@ internal data class BarcodeDraft(
     val format: BarcodeFormat,
 )
 
+internal data class LocationDraft(
+    val coords: String = "",
+    val relevantText: String = "",
+)
+
 internal data class FieldDraft(
     val key: String,
     val label: String,

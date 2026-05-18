@@ -157,9 +157,12 @@ fun PassEditorView(
     var type by remember { mutableStateOf(existingPass?.pass?.type ?: PassType.Generic) }
 
     var locationDrafts by remember {
-        mutableStateOf<List<String>>(
+        mutableStateOf<List<LocationDraft>>(
             existingPass?.pass?.locations?.map { loc ->
-                "${loc.latitude.formatCoord()}, ${loc.longitude.formatCoord()}"
+                LocationDraft(
+                    coords = "${loc.latitude.formatCoord()}, ${loc.longitude.formatCoord()}",
+                    relevantText = loc.extras?.getString("relevantText") ?: "",
+                )
             } ?: emptyList(),
         )
     }
@@ -298,7 +301,13 @@ fun PassEditorView(
                     type = type,
                     barcodes = barCodeModels,
                     colors = colors,
-                    locations = locationDrafts.mapNotNull { parseLatLon(it) },
+                    locations = locationDrafts.mapNotNull { draft ->
+                        parseLatLon(draft.coords)?.also { loc ->
+                            if (draft.relevantText.isNotBlank()) {
+                                loc.extras = android.os.Bundle().apply { putString("relevantText", draft.relevantText) }
+                            }
+                        }
+                    },
                     relevantDates = relevantDates,
                     expirationDate = expirationDate,
                     iconUrl = iconUrl,
@@ -632,9 +641,10 @@ fun PassEditorView(
                         onRelevantEndClear = { relevantEnd = null },
                         onExpirationPick = { openDateTimePicker(context, expirationDate) { expirationDate = it } },
                         onExpirationClear = { expirationDate = null },
-                        onLocationAdd = { locationDrafts = locationDrafts + "" },
+                        onLocationAdd = { locationDrafts = locationDrafts + LocationDraft() },
                         onLocationDelete = { index -> locationDrafts = locationDrafts.filterIndexed { i, _ -> i != index } },
-                        onLocationChange = { index, text -> locationDrafts = locationDrafts.mapIndexed { i, s -> if (i == index) text else s } },
+                        onLocationChange = { index, coords -> locationDrafts = locationDrafts.mapIndexed { i, d -> if (i == index) d.copy(coords = coords) else d } },
+                        onLocationRelevantTextChange = { index, text -> locationDrafts = locationDrafts.mapIndexed { i, d -> if (i == index) d.copy(relevantText = text) else d } },
                     )
             }
         }
@@ -986,7 +996,7 @@ private fun MetadataSheetContent(
     relevantStart: ZonedDateTime?,
     relevantEnd: ZonedDateTime?,
     expirationDate: ZonedDateTime?,
-    locationDrafts: List<String>,
+    locationDrafts: List<LocationDraft>,
     createViewModel: CreateViewModel,
     onOrganizationChange: (String) -> Unit,
     onSerialNumberChange: (String) -> Unit,
@@ -999,6 +1009,7 @@ private fun MetadataSheetContent(
     onLocationAdd: () -> Unit,
     onLocationDelete: (Int) -> Unit,
     onLocationChange: (Int, String) -> Unit,
+    onLocationRelevantTextChange: (Int, String) -> Unit,
 ) {
     val dtFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z")
 
@@ -1069,6 +1080,7 @@ private fun MetadataSheetContent(
                 draft = draft,
                 createViewModel = createViewModel,
                 onTextChange = { onLocationChange(index, it) },
+                onRelevantTextChange = { onLocationRelevantTextChange(index, it) },
                 onDelete = { onLocationDelete(index) },
             )
         }
@@ -1086,13 +1098,14 @@ private fun MetadataSheetContent(
 
 @Composable
 private fun LocationRow(
-    draft: String,
+    draft: LocationDraft,
     createViewModel: CreateViewModel,
     onTextChange: (String) -> Unit,
+    onRelevantTextChange: (String) -> Unit,
     onDelete: () -> Unit,
 ) {
     var searchShown by remember { mutableStateOf(false) }
-    val coordValid = draft.isBlank() || parseLatLon(draft) != null
+    val coordValid = draft.coords.isBlank() || parseLatLon(draft.coords) != null
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -1100,7 +1113,7 @@ private fun LocationRow(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         OutlinedTextField(
-            value = draft,
+            value = draft.coords,
             onValueChange = onTextChange,
             label = { Text(stringResource(R.string.latlon_input)) },
             isError = !coordValid,
@@ -1116,6 +1129,13 @@ private fun LocationRow(
             Icon(imageVector = Icons.Default.Clear, contentDescription = stringResource(R.string.delete))
         }
     }
+    OutlinedTextField(
+        value = draft.relevantText,
+        onValueChange = onRelevantTextChange,
+        label = { Text(stringResource(R.string.location_relevant_text)) },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+    )
 
     if (searchShown) {
         LocationSearchDialog(
