@@ -21,6 +21,7 @@ class WalletApplication :
     override fun onCreate() {
         super.onCreate()
         notificationService.createNearbyNotificationChannel()
+        notificationService.createLocationTrackingChannel()
         if (settingsStore.isLocationEnabled()) {
             locationUpdateManager.enable()
         }

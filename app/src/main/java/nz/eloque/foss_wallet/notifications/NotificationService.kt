@@ -1,12 +1,14 @@
 package nz.eloque.foss_wallet.notifications
 
 import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Location
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -15,13 +17,13 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import nz.eloque.foss_wallet.MainActivity
 import nz.eloque.foss_wallet.R
-import android.location.Location
 import nz.eloque.foss_wallet.model.Pass
 import nz.eloque.foss_wallet.shortcut.Shortcut
 import kotlin.random.Random
 
 const val CHANNEL_ID: String = "pass_updates"
 const val NEARBY_CHANNEL_ID: String = "nearby_passes"
+const val LOCATION_TRACKING_CHANNEL_ID: String = "location_tracking"
 
 class NotificationService
     @Inject
@@ -58,6 +60,27 @@ class NotificationService
                 }
             }
         }
+
+        fun createLocationTrackingChannel() {
+            val channel = NotificationChannel(
+                LOCATION_TRACKING_CHANNEL_ID,
+                context.getString(R.string.location_tracking_channel),
+                NotificationManager.IMPORTANCE_LOW,
+            ).apply {
+                description = context.getString(R.string.location_tracking_channel_description)
+            }
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        fun buildLocationTrackingNotification(): Notification =
+            NotificationCompat.Builder(context, LOCATION_TRACKING_CHANNEL_ID)
+                .setSmallIcon(R.drawable.icon)
+                .setContentTitle(context.getString(R.string.app_name))
+                .setContentText(context.getString(R.string.location_tracking_notification))
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOngoing(true)
+                .build()
 
         fun createNearbyNotificationChannel() {
             val channel = NotificationChannel(

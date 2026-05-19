@@ -19,6 +19,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
 
     <application
         android:name=".app.WalletApplication"
@@ -162,9 +164,10 @@
                 tools:node="remove" />
         </provider>
 
-        <receiver
-            android:name=".api.LocationUpdateReceiver"
-            android:exported="false"/>
+        <service
+            android:name=".api.LocationForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="location"/>
 
         <service
             android:name=".quick_settings.WalletTileService"
