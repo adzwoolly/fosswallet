@@ -21,6 +21,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -37,6 +39,7 @@ import nz.eloque.foss_wallet.ui.screens.UpdateFailureScreen
 import nz.eloque.foss_wallet.ui.screens.about.AboutScreen
 import nz.eloque.foss_wallet.ui.screens.archive.ArchiveScreen
 import nz.eloque.foss_wallet.ui.screens.create.AdvancedAddScreen
+import nz.eloque.foss_wallet.ui.screens.create.CreateRelatedScreen
 import nz.eloque.foss_wallet.ui.screens.create.CreateScreen
 import nz.eloque.foss_wallet.ui.screens.create.CreateViewModel
 import nz.eloque.foss_wallet.ui.screens.create.EditScreen
@@ -182,7 +185,7 @@ fun WalletApp(
                 arguments = listOf(navArgument("passId") { type = NavType.StringType }),
             ) { backStackEntry ->
                 val passId = backStackEntry.arguments?.getString("passId")!!
-                PassScreen(passId, navController, passViewModel)
+                PassScreen(passId, navController, passViewModel, createViewModel)
             }
             composable(
                 route = "edit/{passId}",
@@ -190,6 +193,19 @@ fun WalletApp(
             ) { backStackEntry ->
                 val passId = backStackEntry.arguments?.getString("passId")!!
                 EditScreen(passId, navController, createViewModel, passViewModel)
+            }
+            composable(route = "create_related") {
+                val templatePass by createViewModel.templatePass.collectAsState()
+                val pass = templatePass
+                if (pass == null) {
+                    navController.popBackStack()
+                    return@composable
+                }
+                CreateRelatedScreen(
+                    templatePass = pass,
+                    navController = navController,
+                    createViewModel = createViewModel,
+                )
             }
             composable(
                 route = "updateFailure/{reason}/{rationale}",

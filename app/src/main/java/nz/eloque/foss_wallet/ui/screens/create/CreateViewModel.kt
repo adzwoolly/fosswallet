@@ -20,8 +20,11 @@ import coil.size.Scale
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import nz.eloque.foss_wallet.R
+import nz.eloque.foss_wallet.model.LocalizedPassWithTags
 import nz.eloque.foss_wallet.model.BarCode
 import nz.eloque.foss_wallet.model.PassColors
 import nz.eloque.foss_wallet.model.PassCreator
@@ -50,6 +53,17 @@ class CreateViewModel
         private val passStore: PassStore,
         private val nearbyPassEvaluator: NearbyPassEvaluator,
     ) : AndroidViewModel(application) {
+        private val _templatePass = MutableStateFlow<LocalizedPassWithTags?>(null)
+        val templatePass: StateFlow<LocalizedPassWithTags?> = _templatePass
+
+        fun setTemplate(pass: LocalizedPassWithTags) {
+            _templatePass.value = pass
+        }
+
+        fun clearTemplate() {
+            _templatePass.value = null
+        }
+
         data class GeocodeResult(
             val displayName: String,
             val latitude: Double,
