@@ -83,14 +83,6 @@ private fun ZonedDateTime.pretty(
     }
 }
 
-fun Color.darken(factor: Float = 0.3f): Color =
-    copy(
-        red = red * factor,
-        green = green * factor,
-        blue = blue * factor,
-        alpha = alpha,
-    )
-
 fun InputStream.toByteArray(): ByteArray {
     val baos = ByteArrayOutputStream()
     val buffer = ByteArray(1024)

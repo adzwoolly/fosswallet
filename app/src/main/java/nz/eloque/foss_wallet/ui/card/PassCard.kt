@@ -36,7 +36,6 @@ import nz.eloque.foss_wallet.model.LocalizedPassWithTags
 import nz.eloque.foss_wallet.model.PassColors
 import nz.eloque.foss_wallet.model.Tag
 import nz.eloque.foss_wallet.ui.components.SelectionIndicator
-import nz.eloque.foss_wallet.utils.darken
 
 @Composable
 fun ShortPassCard(
@@ -46,10 +45,9 @@ fun ShortPassCard(
     onClick: () -> Unit = {},
     onLongClick: () -> Unit,
     selected: Boolean = false,
-    toned: Boolean = false,
     isNearby: Boolean = false,
 ) {
-    val cardColors = passCardColors(pass.pass.colors, toned)
+    val cardColors = passCardColors(pass.pass.colors)
     val scale by animateFloatAsState(if (selected) 0.95f else 1f)
 
     Box(
@@ -158,29 +156,14 @@ fun PassCard(
 }
 
 @Composable
-fun passCardColors(
-    passColors: PassColors?,
-    toned: Boolean = false,
-): CardColors {
-    val untonedPassColors =
-        passColors?.toCardColors()
-            ?: CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
-                disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-            )
-    return if (toned) {
-        CardDefaults.elevatedCardColors(
-            containerColor = untonedPassColors.containerColor.darken(1.25f),
-            contentColor = untonedPassColors.contentColor.darken(1.25f),
-            disabledContainerColor = untonedPassColors.disabledContainerColor.darken(1.25f),
-            disabledContentColor = untonedPassColors.disabledContentColor.darken(1.25f),
+fun passCardColors(passColors: PassColors?): CardColors =
+    passColors?.toCardColors()
+        ?: CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
+            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
         )
-    } else {
-        untonedPassColors
-    }
-}
 
 @Preview
 @Composable

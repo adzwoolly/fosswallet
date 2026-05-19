@@ -96,7 +96,6 @@ fun GroupCard(
                         }
                     },
                     selected = selectedPasses.contains(item),
-                    toned = true,
                 )
             }
             Box(
