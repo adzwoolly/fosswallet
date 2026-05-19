@@ -305,6 +305,7 @@ fun PassEditorView(
                     type = type,
                     barcodes = barCodeModels,
                     colors = colors,
+                    logoText = logoText.ifBlank { null },
                     locations = locationDrafts.mapNotNull { draft ->
                         parseLatLon(draft.coords)?.also { loc ->
                             if (draft.relevantText.isNotBlank()) {
