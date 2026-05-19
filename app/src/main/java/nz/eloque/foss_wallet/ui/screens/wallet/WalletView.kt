@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -55,6 +57,11 @@ import nz.eloque.foss_wallet.ui.Screen
 import nz.eloque.foss_wallet.ui.card.ShortPassCard
 import nz.eloque.foss_wallet.ui.components.GroupCard
 import nz.eloque.foss_wallet.ui.components.SwipeToDismiss
+
+private sealed interface WalletItem {
+    data class Group(val groupId: Long, val passes: List<LocalizedPassWithTags>) : WalletItem
+    data class Single(val pass: LocalizedPassWithTags) : WalletItem
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -147,10 +154,17 @@ fun WalletView(
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
     ) {
-        val groups = sortedPasses.filter { it.first != null }
-        val ungrouped = sortedPasses.filter { it.first == null }.flatMap { it.second }
-        val nearbyUngrouped = if (locationEnabled) ungrouped.filter { it.pass.id in nearbyPassIds } else emptyList()
-        val regularUngrouped = ungrouped.filter { it !in nearbyUngrouped }
+        val walletItems: List<WalletItem> = sortedPasses.flatMap { (groupId, passes) ->
+            if (groupId != null) listOf(WalletItem.Group(groupId, passes))
+            else passes.map { WalletItem.Single(it) }
+        }
+        val nearbyItems = if (locationEnabled) walletItems.filter { item ->
+            when (item) {
+                is WalletItem.Group -> item.passes.any { it.pass.id in nearbyPassIds }
+                is WalletItem.Single -> item.pass.pass.id in nearbyPassIds
+            }
+        } else emptyList()
+        val regularItems = walletItems.filter { it !in nearbyItems }
 
         item {
             FilterBlock(
@@ -163,91 +177,131 @@ fun WalletView(
             )
         }
 
-        items(groups) { (groupId, passes) ->
-            GroupCard(
-                groupId = groupId!!,
-                passes = passes,
-                allTags = tags,
-                onClick = { navController.navigate("pass/${it.id}") },
-                walletViewModel = walletViewModel,
-                selectedPasses = selectedPasses,
-            )
-        }
-
-        if (nearbyUngrouped.isNotEmpty()) {
+        if (nearbyItems.isNotEmpty()) {
             item(key = "nearby_header") {
-                Text(
-                    text = stringResource(R.string.nearby_header),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp),
-                )
-            }
-            items(nearbyUngrouped, key = { "nearby_${it.pass.id}" }) { pass ->
-                val isSelectionMode = selectedPasses.isNotEmpty()
-                SwipeToDismiss(
-                    leftSwipeBackground = {
-                        Icon(imageVector = if (archive) Icons.Default.Unarchive else Icons.Default.Archive, contentDescription = null)
-                    },
-                    rightSwipeBackground = {
-                        Icon(imageVector = Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                    },
-                    allowLeftSwipe = !isSelectionMode,
-                    allowRightSwipe = !isSelectionMode,
-                    onLeftSwipe = { if (archive) walletViewModel.unarchive(pass.pass) else walletViewModel.archive(pass.pass) },
-                    onRightSwipe = { passToDelete.value = pass },
-                    modifier = Modifier.padding(2.dp),
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
                 ) {
-                    ShortPassCard(
-                        pass = pass,
-                        allTags = tags,
-                        isNearby = true,
-                        onClick = {
-                            if (selectedPasses.isNotEmpty()) {
-                                if (selectedPasses.contains(pass)) selectedPasses.remove(pass) else selectedPasses.add(pass)
-                            } else {
-                                navController.navigate("pass/${pass.pass.id}")
-                            }
-                        },
-                        onLongClick = {
-                            if (selectedPasses.contains(pass)) selectedPasses.remove(pass) else selectedPasses.add(pass)
-                        },
-                        selected = selectedPasses.contains(pass),
+                    Text(
+                        text = stringResource(R.string.nearby_header),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
                     )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 8.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+            items(nearbyItems, key = {
+                when (it) {
+                    is WalletItem.Group -> "nearby_group_${it.groupId}"
+                    is WalletItem.Single -> "nearby_${it.pass.pass.id}"
+                }
+            }) { item ->
+                when (item) {
+                    is WalletItem.Group -> GroupCard(
+                        groupId = item.groupId,
+                        passes = item.passes,
+                        allTags = tags,
+                        onClick = { navController.navigate("pass/${it.id}") },
+                        walletViewModel = walletViewModel,
+                        selectedPasses = selectedPasses,
+                        nearbyPassIds = nearbyPassIds,
+                    )
+                    is WalletItem.Single -> {
+                        val pass = item.pass
+                        val isSelectionMode = selectedPasses.isNotEmpty()
+                        SwipeToDismiss(
+                            leftSwipeBackground = {
+                                Icon(imageVector = if (archive) Icons.Default.Unarchive else Icons.Default.Archive, contentDescription = null)
+                            },
+                            rightSwipeBackground = {
+                                Icon(imageVector = Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                            },
+                            allowLeftSwipe = !isSelectionMode,
+                            allowRightSwipe = !isSelectionMode,
+                            onLeftSwipe = { if (archive) walletViewModel.unarchive(pass.pass) else walletViewModel.archive(pass.pass) },
+                            onRightSwipe = { passToDelete.value = pass },
+                            modifier = Modifier.padding(2.dp),
+                        ) {
+                            ShortPassCard(
+                                pass = pass,
+                                allTags = tags,
+                                isNearby = true,
+                                onClick = {
+                                    if (selectedPasses.isNotEmpty()) {
+                                        if (selectedPasses.contains(pass)) selectedPasses.remove(pass) else selectedPasses.add(pass)
+                                    } else {
+                                        navController.navigate("pass/${pass.pass.id}")
+                                    }
+                                },
+                                onLongClick = {
+                                    if (selectedPasses.contains(pass)) selectedPasses.remove(pass) else selectedPasses.add(pass)
+                                },
+                                selected = selectedPasses.contains(pass),
+                            )
+                        }
+                    }
                 }
             }
         }
 
-        items(regularUngrouped, key = { it.pass.id }) { pass ->
-            val isSelectionMode = selectedPasses.isNotEmpty()
-            SwipeToDismiss(
-                leftSwipeBackground = {
-                    Icon(imageVector = if (archive) Icons.Default.Unarchive else Icons.Default.Archive, contentDescription = null)
-                },
-                rightSwipeBackground = {
-                    Icon(imageVector = Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                },
-                allowLeftSwipe = !isSelectionMode,
-                allowRightSwipe = !isSelectionMode,
-                onLeftSwipe = { if (archive) walletViewModel.unarchive(pass.pass) else walletViewModel.archive(pass.pass) },
-                onRightSwipe = { passToDelete.value = pass },
-                modifier = Modifier.padding(2.dp),
-            ) {
-                ShortPassCard(
-                    pass = pass,
+        if (nearbyItems.isNotEmpty()) {
+            item(key = "nearby_divider") {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            }
+        }
+
+        items(regularItems, key = {
+            when (it) {
+                is WalletItem.Group -> "group_${it.groupId}"
+                is WalletItem.Single -> it.pass.pass.id
+            }
+        }) { item ->
+            when (item) {
+                is WalletItem.Group -> GroupCard(
+                    groupId = item.groupId,
+                    passes = item.passes,
                     allTags = tags,
-                    onClick = {
-                        if (selectedPasses.isNotEmpty()) {
-                            if (selectedPasses.contains(pass)) selectedPasses.remove(pass) else selectedPasses.add(pass)
-                        } else {
-                            navController.navigate("pass/${pass.pass.id}")
-                        }
-                    },
-                    onLongClick = {
-                        if (selectedPasses.contains(pass)) selectedPasses.remove(pass) else selectedPasses.add(pass)
-                    },
-                    selected = selectedPasses.contains(pass),
+                    onClick = { navController.navigate("pass/${it.id}") },
+                    walletViewModel = walletViewModel,
+                    selectedPasses = selectedPasses,
                 )
+                is WalletItem.Single -> {
+                    val pass = item.pass
+                    val isSelectionMode = selectedPasses.isNotEmpty()
+                    SwipeToDismiss(
+                        leftSwipeBackground = {
+                            Icon(imageVector = if (archive) Icons.Default.Unarchive else Icons.Default.Archive, contentDescription = null)
+                        },
+                        rightSwipeBackground = {
+                            Icon(imageVector = Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                        },
+                        allowLeftSwipe = !isSelectionMode,
+                        allowRightSwipe = !isSelectionMode,
+                        onLeftSwipe = { if (archive) walletViewModel.unarchive(pass.pass) else walletViewModel.archive(pass.pass) },
+                        onRightSwipe = { passToDelete.value = pass },
+                        modifier = Modifier.padding(2.dp),
+                    ) {
+                        ShortPassCard(
+                            pass = pass,
+                            allTags = tags,
+                            onClick = {
+                                if (selectedPasses.isNotEmpty()) {
+                                    if (selectedPasses.contains(pass)) selectedPasses.remove(pass) else selectedPasses.add(pass)
+                                } else {
+                                    navController.navigate("pass/${pass.pass.id}")
+                                }
+                            },
+                            onLongClick = {
+                                if (selectedPasses.contains(pass)) selectedPasses.remove(pass) else selectedPasses.add(pass)
+                            },
+                            selected = selectedPasses.contains(pass),
+                        )
+                    }
+                }
             }
         }
         if (!archive) {

@@ -51,6 +51,7 @@ fun GroupCard(
     selectedPasses: MutableSet<LocalizedPassWithTags>,
     walletViewModel: WalletViewModel,
     modifier: Modifier = Modifier,
+    nearbyPassIds: Set<String> = emptySet(),
     onClick: (Pass) -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -75,6 +76,7 @@ fun GroupCard(
                 ShortPassCard(
                     pass = item,
                     allTags = allTags,
+                    isNearby = item.pass.id in nearbyPassIds,
                     onClick = {
                         if (selectedPasses.isNotEmpty()) {
                             val allGroupPassesSelected = passes.all { selectedPasses.contains(it) }
