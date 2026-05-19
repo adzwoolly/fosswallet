@@ -227,4 +227,9 @@
     <string name="location_enabled_subtitle">Surface passes when you\'re within 100m of their location. Requires \"Allow all the time\" location permission.</string>
     <string name="nearby_header">Nearby</string>
     <string name="nearby_pass">Nearby pass</string>
+
+    <string name="create_related_pass">Create related pass</string>
+    <string name="copy_organisation">Copy organisation</string>
+    <string name="copy_colours">Copy colours</string>
+    <string name="copy_locations">Copy locations</string>
 </resources>

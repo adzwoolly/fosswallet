@@ -117,11 +117,12 @@ fun PassEditorView(
     createViewModel: CreateViewModel,
     initialBarcode: BarCode? = null,
     existingPass: LocalizedPassWithTags? = null,
+    isTemplate: Boolean = false,
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val coroutineScope = rememberCoroutineScope()
-    val isEditing = existingPass != null
+    val isEditing = existingPass != null && !isTemplate
 
     fun existingImageUri(fileName: String): Uri? =
         existingPass?.pass?.id?.let { id ->
@@ -324,8 +325,8 @@ fun PassEditorView(
                     secondaryFields = fields.toPassFields(FieldCategory.Secondary),
                     auxiliaryFields = fields.toPassFields(FieldCategory.Auxiliary),
                     backFields = fields.toPassFields(FieldCategory.Back),
-                    existingPassId = existingPass?.pass?.id,
-                    existingAddedAt = existingPass?.pass?.addedAt,
+                    existingPassId = if (isTemplate) null else existingPass?.pass?.id,
+                    existingAddedAt = if (isTemplate) null else existingPass?.pass?.addedAt,
                 )
             withContext(Dispatchers.Main) {
                 isSaving = false

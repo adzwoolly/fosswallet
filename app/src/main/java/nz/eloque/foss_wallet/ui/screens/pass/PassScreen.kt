@@ -12,11 +12,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AppShortcut
 import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.CopyAll
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Unarchive
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +30,8 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,12 +55,15 @@ import nz.eloque.foss_wallet.R
 import nz.eloque.foss_wallet.api.FailureReason
 import nz.eloque.foss_wallet.api.UpdateContent
 import nz.eloque.foss_wallet.api.UpdateResult
+import nz.eloque.foss_wallet.model.Attachment
 import nz.eloque.foss_wallet.model.LocalizedPassWithTags
 import nz.eloque.foss_wallet.model.Pass
 import nz.eloque.foss_wallet.model.PassMetadata
+import nz.eloque.foss_wallet.model.Tag
 import nz.eloque.foss_wallet.shortcut.Shortcut
 import nz.eloque.foss_wallet.ui.AllowOnLockscreen
 import nz.eloque.foss_wallet.ui.WalletScaffold
+import nz.eloque.foss_wallet.ui.screens.create.CreateViewModel
 import nz.eloque.foss_wallet.ui.screens.wallet.DeleteConfirmationDialog
 import nz.eloque.foss_wallet.utils.asString
 
@@ -65,6 +73,7 @@ fun PassScreen(
     passId: String,
     navController: NavHostController,
     passViewModel: PassViewModel,
+    createViewModel: CreateViewModel,
 ) {
     val passFlow: Flow<LocalizedPassWithTags> =
         remember {
@@ -87,11 +96,12 @@ fun PassScreen(
             toolWindow = true,
             actions = {
                 Actions(
-                    pass = localizedPass.pass,
+                    localizedPass = localizedPass,
                     metadata = localizedPass.metadata,
                     navController = navController,
                     snackbarHostState = snackbarHostState,
                     passViewModel = passViewModel,
+                    createViewModel = createViewModel,
                 )
             },
         ) { scrollBehavior ->
@@ -114,12 +124,14 @@ fun PassScreen(
 
 @Composable
 fun Actions(
-    pass: Pass,
+    localizedPass: LocalizedPassWithTags,
     metadata: PassMetadata,
     navController: NavHostController,
     snackbarHostState: SnackbarHostState,
     passViewModel: PassViewModel,
+    createViewModel: CreateViewModel,
 ) {
+    val pass = localizedPass.pass
     val context = LocalContext.current
     val resources = LocalResources.current
     val coroutineScope = rememberCoroutineScope()
@@ -128,6 +140,7 @@ fun Actions(
     val isLoading = remember { mutableStateOf(false) }
 
     var showDeleteModal by remember { mutableStateOf(false) }
+    var showCreateRelatedModal by remember { mutableStateOf(false) }
 
     if (showDeleteModal) {
         DeleteConfirmationDialog(
@@ -139,6 +152,70 @@ fun Actions(
             },
             onDismiss = {
                 showDeleteModal = false
+            },
+        )
+    }
+
+    if (showCreateRelatedModal) {
+        var copyOrganisation by remember { mutableStateOf(true) }
+        var copyColours by remember { mutableStateOf(true) }
+        var copyLocations by remember { mutableStateOf(true) }
+
+        AlertDialog(
+            onDismissRequest = { showCreateRelatedModal = false },
+            title = { Text(stringResource(R.string.create_related_pass)) },
+            text = {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = copyOrganisation, onCheckedChange = { copyOrganisation = it })
+                        Text(stringResource(R.string.copy_organisation))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = copyColours, onCheckedChange = { copyColours = it })
+                        Text(stringResource(R.string.copy_colours))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = copyLocations, onCheckedChange = { copyLocations = it })
+                        Text(stringResource(R.string.copy_locations))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val templatePass = LocalizedPassWithTags(
+                        pass = pass.copy(
+                            id = "",
+                            serialNumber = "",
+                            organization = if (copyOrganisation) pass.organization else "",
+                            colors = if (copyColours) pass.colors else null,
+                            locations = if (copyLocations) pass.locations else emptyList(),
+                            maxDistance = if (copyLocations) pass.maxDistance else null,
+                            description = "",
+                            barCodes = emptySet(),
+                            headerFields = emptyList(),
+                            primaryFields = emptyList(),
+                            secondaryFields = emptyList(),
+                            auxiliaryFields = emptyList(),
+                            backFields = emptyList(),
+                            relevantDates = emptyList(),
+                            expirationDate = null,
+                        ),
+                        metadata = localizedPass.metadata.copy(passId = ""),
+                        tags = emptySet(),
+                        attachments = emptyList(),
+                    )
+                    createViewModel.setTemplate(templatePass)
+                    expanded.value = false
+                    showCreateRelatedModal = false
+                    navController.navigate("create_related")
+                }) {
+                    Text(stringResource(R.string.create_pass))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCreateRelatedModal = false }) {
+                    Text(stringResource(R.string.back))
+                }
             },
         )
     }
@@ -238,6 +315,16 @@ fun Actions(
                 onClick = {
                     expanded.value = false
                     navController.navigate("edit/${pass.id}")
+                },
+            )
+
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.create_related_pass)) },
+                leadingIcon = {
+                    Icon(imageVector = Icons.Default.CopyAll, contentDescription = stringResource(R.string.create_related_pass))
+                },
+                onClick = {
+                    showCreateRelatedModal = true
                 },
             )
 
