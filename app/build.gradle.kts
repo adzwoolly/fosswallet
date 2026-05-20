@@ -18,13 +18,16 @@ kotlin {
     }
 }
 
-val localProps = Properties().apply {
-    val f = rootProject.file("local.properties")
-    if (f.exists()) load(f.inputStream())
-}
+val localProps =
+    Properties().apply {
+        val f = rootProject.file("local.properties")
+        if (f.exists()) load(f.inputStream())
+    }
 
-fun localOrEnv(localKey: String, envKey: String): String? =
-    localProps.getProperty(localKey) ?: System.getenv(envKey)
+fun localOrEnv(
+    localKey: String,
+    envKey: String,
+): String? = localProps.getProperty(localKey) ?: System.getenv(envKey)
 
 android {
     dependenciesInfo {
@@ -173,6 +176,11 @@ dependencies {
     implementation(libs.aboutlibraries.compose.m3)
 
     implementation(libs.color.picker)
+
+    // Glance widget
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+    implementation(libs.androidx.lifecycle.process)
 
     implementation(libs.bcbp.parser)
 }

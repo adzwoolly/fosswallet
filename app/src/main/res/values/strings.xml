@@ -232,6 +232,10 @@
     <string name="location_tracking_channel_description">Keeps location monitoring active in the background</string>
     <string name="location_tracking_notification">Watching for nearby passes</string>
 
+    <string name="widget_nearby_passes_description">Shows passes that are relevant at your current location</string>
+    <string name="widget_view_all_passes">View all passes</string>
+    <string name="widget_nearby_label">Nearby</string>
+
     <string name="create_related_pass">Create related pass</string>
     <string name="copy_organisation">Copy organisation</string>
     <string name="copy_colours">Copy colours</string>
