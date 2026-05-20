@@ -11,7 +11,6 @@ import nz.eloque.foss_wallet.persistence.pass.PassDao
 import nz.eloque.foss_wallet.persistence.tag.TagDao
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -173,7 +172,9 @@ class BackupStore
                     val pass = BackupSerializer.deserializePass(passesArray.getJSONObject(i))
                     passDao.insert(pass)
 
-                    val meta = metaByPassId[pass.id] ?: nz.eloque.foss_wallet.model.PassMetadata(pass.id)
+                    val meta =
+                        metaByPassId[pass.id] ?: nz.eloque.foss_wallet.model
+                            .PassMetadata(pass.id)
                     val remappedMeta = meta.copy(groupId = meta.groupId?.let { groupIdMap[it] })
                     passDao.insert(remappedMeta)
 

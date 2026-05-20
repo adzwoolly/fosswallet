@@ -257,9 +257,10 @@ fun BackFields(fields: List<PassField>) {
             val isStandaloneUrl = urlRegex.matches(rawText)
             if (isStandaloneUrl) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { uriHandler.openUri(rawText) },
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { uriHandler.openUri(rawText) },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
@@ -267,10 +268,11 @@ fun BackFields(fields: List<PassField>) {
                         field = field,
                         maxLines = Int.MAX_VALUE,
                         isSelectable = false,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            textDecoration = TextDecoration.Underline,
-                            color = MaterialTheme.colorScheme.primary,
-                        ),
+                        style =
+                            MaterialTheme.typography.bodyLarge.copy(
+                                textDecoration = TextDecoration.Underline,
+                                color = MaterialTheme.colorScheme.primary,
+                            ),
                         modifier = Modifier.weight(1f),
                     )
                     Icon(
@@ -289,4 +291,3 @@ fun BackFields(fields: List<PassField>) {
         }
     }
 }
-

@@ -41,7 +41,6 @@ import nz.eloque.foss_wallet.model.PassRelevantDate
 import nz.eloque.foss_wallet.model.Tag
 import nz.eloque.foss_wallet.ui.components.CalendarButton
 import nz.eloque.foss_wallet.ui.components.ChipRow
-import nz.eloque.foss_wallet.ui.components.LocationButton
 import nz.eloque.foss_wallet.ui.components.tag.TagChooser
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -178,11 +177,12 @@ private fun MultiLocationButton(locations: List<Location>) {
     if (pickerShown) {
         ModalBottomSheet(onDismissRequest = { pickerShown = false }) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 16.dp)
-                    .navigationBarsPadding(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 16.dp)
+                        .navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
@@ -191,10 +191,14 @@ private fun MultiLocationButton(locations: List<Location>) {
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
                 locations.forEach { location ->
-                    val label = location.extras?.getString("relevantText")
-                        ?: "%.6f, %.6f".format(location.latitude, location.longitude)
+                    val label =
+                        location.extras?.getString("relevantText")
+                            ?: "%.6f, %.6f".format(location.latitude, location.longitude)
                     TextButton(
-                        onClick = { openMap(location); pickerShown = false },
+                        onClick = {
+                            openMap(location)
+                            pickerShown = false
+                        },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Icon(

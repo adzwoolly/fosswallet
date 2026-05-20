@@ -114,7 +114,9 @@ class TypeConverters {
             val locJson = JSONObject()
             locJson.put("latitude", it.latitude)
             locJson.put("longitude", it.longitude)
-            it.extras?.getString("relevantText")?.takeIf { t -> t.isNotEmpty() }
+            it.extras
+                ?.getString("relevantText")
+                ?.takeIf { t -> t.isNotEmpty() }
                 ?.let { t -> locJson.put("relevantText", t) }
             json.put(locJson)
         }

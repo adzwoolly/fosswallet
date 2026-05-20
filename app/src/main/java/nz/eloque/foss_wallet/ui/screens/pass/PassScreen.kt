@@ -8,6 +8,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AppShortcut
@@ -31,7 +32,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -55,11 +55,9 @@ import nz.eloque.foss_wallet.R
 import nz.eloque.foss_wallet.api.FailureReason
 import nz.eloque.foss_wallet.api.UpdateContent
 import nz.eloque.foss_wallet.api.UpdateResult
-import nz.eloque.foss_wallet.model.Attachment
 import nz.eloque.foss_wallet.model.LocalizedPassWithTags
 import nz.eloque.foss_wallet.model.Pass
 import nz.eloque.foss_wallet.model.PassMetadata
-import nz.eloque.foss_wallet.model.Tag
 import nz.eloque.foss_wallet.shortcut.Shortcut
 import nz.eloque.foss_wallet.ui.AllowOnLockscreen
 import nz.eloque.foss_wallet.ui.WalletScaffold
@@ -182,28 +180,30 @@ fun Actions(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    val templatePass = LocalizedPassWithTags(
-                        pass = pass.copy(
-                            id = "",
-                            serialNumber = "",
-                            organization = if (copyOrganisation) pass.organization else "",
-                            colors = if (copyColours) pass.colors else null,
-                            locations = if (copyLocations) pass.locations else emptyList(),
-                            maxDistance = if (copyLocations) pass.maxDistance else null,
-                            description = "",
-                            barCodes = emptySet(),
-                            headerFields = emptyList(),
-                            primaryFields = emptyList(),
-                            secondaryFields = emptyList(),
-                            auxiliaryFields = emptyList(),
-                            backFields = emptyList(),
-                            relevantDates = emptyList(),
-                            expirationDate = null,
-                        ),
-                        metadata = localizedPass.metadata.copy(passId = ""),
-                        tags = emptySet(),
-                        attachments = emptyList(),
-                    )
+                    val templatePass =
+                        LocalizedPassWithTags(
+                            pass =
+                                pass.copy(
+                                    id = "",
+                                    serialNumber = "",
+                                    organization = if (copyOrganisation) pass.organization else "",
+                                    colors = if (copyColours) pass.colors else null,
+                                    locations = if (copyLocations) pass.locations else emptyList(),
+                                    maxDistance = if (copyLocations) pass.maxDistance else null,
+                                    description = "",
+                                    barCodes = emptySet(),
+                                    headerFields = emptyList(),
+                                    primaryFields = emptyList(),
+                                    secondaryFields = emptyList(),
+                                    auxiliaryFields = emptyList(),
+                                    backFields = emptyList(),
+                                    relevantDates = emptyList(),
+                                    expirationDate = null,
+                                ),
+                            metadata = localizedPass.metadata.copy(passId = ""),
+                            tags = emptySet(),
+                            attachments = emptyList(),
+                        )
                     createViewModel.setTemplate(templatePass)
                     expanded.value = false
                     showCreateRelatedModal = false

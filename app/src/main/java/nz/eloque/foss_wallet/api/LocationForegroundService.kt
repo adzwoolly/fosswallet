@@ -19,16 +19,22 @@ import nz.eloque.foss_wallet.notifications.NotificationService
 private const val FOREGROUND_NOTIFICATION_ID = 2
 
 @AndroidEntryPoint
-class LocationForegroundService : Service(), LocationListener {
-
+class LocationForegroundService :
+    Service(),
+    LocationListener {
     @Inject lateinit var nearbyPassEvaluator: NearbyPassEvaluator
+
     @Inject lateinit var notificationService: NotificationService
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private lateinit var locationManager: LocationManager
 
     @SuppressLint("MissingPermission")
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int {
         notificationService.createLocationTrackingChannel()
         startForeground(FOREGROUND_NOTIFICATION_ID, notificationService.buildLocationTrackingNotification())
 

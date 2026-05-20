@@ -75,9 +75,10 @@ fun PassField(
             else -> TextAlign.Start
         }
     val uriHandler = LocalUriHandler.current
-    val linkListener = LinkInteractionListener { annotation ->
-        if (annotation is LinkAnnotation.Url) uriHandler.openUri(annotation.url)
-    }
+    val linkListener =
+        LinkInteractionListener { annotation ->
+            if (annotation is LinkAnnotation.Url) uriHandler.openUri(annotation.url)
+        }
 
     Column(
         modifier = modifier,
@@ -231,8 +232,11 @@ private fun String.sanitize(): String =
         .replace("\n", "<br>")
 
 private fun String.linkifyBareUrls(): String =
-    if (contains("<a ")) this
-    else bareUrlRegex.replace(this) { "<a href=\"${it.value}\">${it.value}</a>" }
+    if (contains("<a ")) {
+        this
+    } else {
+        bareUrlRegex.replace(this) { "<a href=\"${it.value}\">${it.value}</a>" }
+    }
 
 private fun PassContent.parseHtml(linkInteractionListener: LinkInteractionListener? = null): AnnotatedString =
     AnnotatedString.fromHtml(prettyPrint().sanitize().linkifyBareUrls(), linkStyle, linkInteractionListener)

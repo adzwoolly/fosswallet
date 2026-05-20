@@ -7,7 +7,6 @@ import nz.eloque.foss_wallet.model.Attachment
 import nz.eloque.foss_wallet.model.BarCode
 import nz.eloque.foss_wallet.model.Pass
 import nz.eloque.foss_wallet.model.PassColors
-import nz.eloque.foss_wallet.model.PassGroup
 import nz.eloque.foss_wallet.model.PassMetadata
 import nz.eloque.foss_wallet.model.PassRelevantDate
 import nz.eloque.foss_wallet.model.PassTagCrossRef

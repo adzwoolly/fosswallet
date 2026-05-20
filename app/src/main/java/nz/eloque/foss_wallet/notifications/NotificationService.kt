@@ -62,19 +62,21 @@ class NotificationService
         }
 
         fun createLocationTrackingChannel() {
-            val channel = NotificationChannel(
-                LOCATION_TRACKING_CHANNEL_ID,
-                context.getString(R.string.location_tracking_channel),
-                NotificationManager.IMPORTANCE_LOW,
-            ).apply {
-                description = context.getString(R.string.location_tracking_channel_description)
-            }
+            val channel =
+                NotificationChannel(
+                    LOCATION_TRACKING_CHANNEL_ID,
+                    context.getString(R.string.location_tracking_channel),
+                    NotificationManager.IMPORTANCE_LOW,
+                ).apply {
+                    description = context.getString(R.string.location_tracking_channel_description)
+                }
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
 
         fun buildLocationTrackingNotification(): Notification =
-            NotificationCompat.Builder(context, LOCATION_TRACKING_CHANNEL_ID)
+            NotificationCompat
+                .Builder(context, LOCATION_TRACKING_CHANNEL_ID)
                 .setSmallIcon(R.drawable.icon)
                 .setContentTitle(context.getString(R.string.app_name))
                 .setContentText(context.getString(R.string.location_tracking_notification))
@@ -83,19 +85,24 @@ class NotificationService
                 .build()
 
         fun createNearbyNotificationChannel() {
-            val channel = NotificationChannel(
-                NEARBY_CHANNEL_ID,
-                context.getString(R.string.nearby_passes_channel),
-                NotificationManager.IMPORTANCE_LOW,
-            ).apply {
-                description = context.getString(R.string.nearby_passes_channel_description)
-            }
+            val channel =
+                NotificationChannel(
+                    NEARBY_CHANNEL_ID,
+                    context.getString(R.string.nearby_passes_channel),
+                    NotificationManager.IMPORTANCE_LOW,
+                ).apply {
+                    description = context.getString(R.string.nearby_passes_channel_description)
+                }
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
 
         fun updateNearbyNotifications(nearby: List<Pair<Pass, Location>>) {
-            if (PackageManager.PERMISSION_GRANTED != ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)) return
+            if (PackageManager.PERMISSION_GRANTED !=
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+            ) {
+                return
+            }
 
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val notificationManagerCompat = NotificationManagerCompat.from(context)
@@ -109,29 +116,34 @@ class NotificationService
             nearby.forEach { (pass, matchedLocation) ->
                 val relevantText = matchedLocation.extras?.getString("relevantText")?.takeIf { it.isNotBlank() }
 
-                val pendingIntent = PendingIntent.getActivity(
-                    context,
-                    pass.id.hashCode(),
-                    Intent(Intent.ACTION_VIEW, "${Shortcut.BASE_URI}/${pass.id}".toUri(), context, MainActivity::class.java),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                )
+                val pendingIntent =
+                    PendingIntent.getActivity(
+                        context,
+                        pass.id.hashCode(),
+                        Intent(Intent.ACTION_VIEW, "${Shortcut.BASE_URI}/${pass.id}".toUri(), context, MainActivity::class.java),
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    )
 
-                val publicVersion = NotificationCompat.Builder(context, NEARBY_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.icon)
-                    .setContentTitle(context.getString(R.string.app_name))
-                    .setContentText(context.getString(R.string.nearby_pass))
-                    .build()
+                val publicVersion =
+                    NotificationCompat
+                        .Builder(context, NEARBY_CHANNEL_ID)
+                        .setSmallIcon(R.drawable.icon)
+                        .setContentTitle(context.getString(R.string.app_name))
+                        .setContentText(context.getString(R.string.nearby_pass))
+                        .build()
 
-                val notification = NotificationCompat.Builder(context, NEARBY_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.icon)
-                    .setContentTitle(pass.description)
-                    .setContentText(relevantText ?: context.getString(R.string.pass_nearby))
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
-                    .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-                    .setPublicVersion(publicVersion)
-                    .setContentIntent(pendingIntent)
-                    .setOngoing(false)
-                    .build()
+                val notification =
+                    NotificationCompat
+                        .Builder(context, NEARBY_CHANNEL_ID)
+                        .setSmallIcon(R.drawable.icon)
+                        .setContentTitle(pass.description)
+                        .setContentText(relevantText ?: context.getString(R.string.pass_nearby))
+                        .setPriority(NotificationCompat.PRIORITY_LOW)
+                        .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                        .setPublicVersion(publicVersion)
+                        .setContentIntent(pendingIntent)
+                        .setOngoing(false)
+                        .build()
 
                 notificationManagerCompat.notify(pass.id.hashCode(), notification)
             }

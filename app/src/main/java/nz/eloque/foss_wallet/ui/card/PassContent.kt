@@ -16,6 +16,7 @@ import nz.eloque.foss_wallet.ui.card.primary.GenericPrimary
 import nz.eloque.foss_wallet.ui.screens.pass.AsyncPassImage
 
 private fun PassType.supportsStrip() = this is PassType.Coupon || this is PassType.Event || this is PassType.StoreCard
+
 private fun PassType.supportsThumbnail() = this is PassType.Generic || this is PassType.Event
 
 @Composable

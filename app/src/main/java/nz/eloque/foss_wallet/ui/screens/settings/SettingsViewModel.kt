@@ -11,10 +11,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import nz.eloque.foss_wallet.api.LocationUpdateManager
 import nz.eloque.foss_wallet.api.UpdateScheduler
-import nz.eloque.foss_wallet.persistence.backup.BackupStore
 import nz.eloque.foss_wallet.persistence.BarcodePosition
 import nz.eloque.foss_wallet.persistence.PassStore
 import nz.eloque.foss_wallet.persistence.SettingsStore
+import nz.eloque.foss_wallet.persistence.backup.BackupStore
 import java.io.InputStream
 import java.io.OutputStream
 import kotlin.time.Duration

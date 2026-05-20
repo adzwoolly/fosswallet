@@ -1,7 +1,6 @@
 package nz.eloque.foss_wallet.ui.screens.create
 
 import android.annotation.SuppressLint
-import androidx.annotation.StringRes
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
@@ -10,6 +9,7 @@ import android.location.Location
 import android.net.Uri
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -31,20 +31,20 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -52,6 +52,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -77,7 +78,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.intl.Locale
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.navigation.NavHostController
@@ -261,8 +261,11 @@ fun PassEditorView(
             if (activeBarcodeIndex !in barcodes.indices) return@launch
             barcodes =
                 barcodes.mapIndexed { index, barcode ->
-                    if (index != activeBarcodeIndex) barcode
-                    else barcode.copy(message = scanned.message, altText = scanned.altText ?: scanned.message, format = scanned.format)
+                    if (index != activeBarcodeIndex) {
+                        barcode
+                    } else {
+                        barcode.copy(message = scanned.message, altText = scanned.altText ?: scanned.message, format = scanned.format)
+                    }
                 }
         }
 
@@ -306,13 +309,14 @@ fun PassEditorView(
                     barcodes = barCodeModels,
                     colors = colors,
                     logoText = logoText.ifBlank { null },
-                    locations = locationDrafts.mapNotNull { draft ->
-                        parseLatLon(draft.coords)?.also { loc ->
-                            if (draft.relevantText.isNotBlank()) {
-                                loc.extras = android.os.Bundle().apply { putString("relevantText", draft.relevantText) }
+                    locations =
+                        locationDrafts.mapNotNull { draft ->
+                            parseLatLon(draft.coords)?.also { loc ->
+                                if (draft.relevantText.isNotBlank()) {
+                                    loc.extras = android.os.Bundle().apply { putString("relevantText", draft.relevantText) }
+                                }
                             }
-                        }
-                    },
+                        },
                     relevantDates = relevantDates,
                     expirationDate = expirationDate,
                     maxDistance = maxDistance.toDoubleOrNull(),
@@ -457,7 +461,9 @@ fun PassEditorView(
                 Icon(imageVector = Icons.Default.QrCodeScanner, contentDescription = null)
                 Text(
                     text =
-                        barcodes.take(2).joinToString(", ") { it.format.name }
+                        barcodes
+                            .take(2)
+                            .joinToString(", ") { it.format.name }
                             .let { if (barcodes.size > 2) "$it…" else it },
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
@@ -545,12 +551,12 @@ fun PassEditorView(
                         onFieldAdd = {
                             fields =
                                 fields +
-                                    FieldDraft(
-                                        key = UUID.randomUUID().toString().take(8),
-                                        label = "",
-                                        value = "",
-                                        category = sheet.category,
-                                    )
+                                FieldDraft(
+                                    key = UUID.randomUUID().toString().take(8),
+                                    label = "",
+                                    value = "",
+                                    category = sheet.category,
+                                )
                         },
                     )
 
@@ -651,8 +657,14 @@ fun PassEditorView(
                         onMaxDistanceChange = { maxDistance = it },
                         onLocationAdd = { locationDrafts = locationDrafts + LocationDraft() },
                         onLocationDelete = { index -> locationDrafts = locationDrafts.filterIndexed { i, _ -> i != index } },
-                        onLocationChange = { index, coords -> locationDrafts = locationDrafts.mapIndexed { i, d -> if (i == index) d.copy(coords = coords) else d } },
-                        onLocationRelevantTextChange = { index, text -> locationDrafts = locationDrafts.mapIndexed { i, d -> if (i == index) d.copy(relevantText = text) else d } },
+                        onLocationChange = { index, coords ->
+                            locationDrafts =
+                                locationDrafts.mapIndexed { i, d -> if (i == index) d.copy(coords = coords) else d }
+                        },
+                        onLocationRelevantTextChange = { index, text ->
+                            locationDrafts =
+                                locationDrafts.mapIndexed { i, d -> if (i == index) d.copy(relevantText = text) else d }
+                        },
                     )
             }
         }
@@ -1397,7 +1409,10 @@ private fun parseLatLon(input: String): Location? {
     val lat = parts[0].toDoubleOrNull() ?: return null
     val lon = parts[1].toDoubleOrNull() ?: return null
     if (lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0) return null
-    return Location("").apply { latitude = lat; longitude = lon }
+    return Location("").apply {
+        latitude = lat
+        longitude = lon
+    }
 }
 
 private fun openDateTimePicker(

@@ -7,7 +7,8 @@ internal enum class FieldCategory {
     Primary,
     Secondary,
     Auxiliary,
-    Back;
+    Back,
+    ;
 
     fun displayName(): String = name
 }
@@ -32,12 +33,22 @@ internal data class FieldDraft(
 
 internal sealed class EditorSheet {
     object Logo : EditorSheet()
+
     object LogoText : EditorSheet()
-    data class Fields(val category: FieldCategory) : EditorSheet()
+
+    data class Fields(
+        val category: FieldCategory,
+    ) : EditorSheet()
+
     object Strip : EditorSheet()
+
     object Thumbnail : EditorSheet()
+
     object Footer : EditorSheet()
+
     object Barcodes : EditorSheet()
+
     object Appearance : EditorSheet()
+
     object Metadata : EditorSheet()
 }

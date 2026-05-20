@@ -59,8 +59,14 @@ import nz.eloque.foss_wallet.ui.components.GroupCard
 import nz.eloque.foss_wallet.ui.components.SwipeToDismiss
 
 private sealed interface WalletItem {
-    data class Group(val groupId: Long, val passes: List<LocalizedPassWithTags>) : WalletItem
-    data class Single(val pass: LocalizedPassWithTags) : WalletItem
+    data class Group(
+        val groupId: Long,
+        val passes: List<LocalizedPassWithTags>,
+    ) : WalletItem
+
+    data class Single(
+        val pass: LocalizedPassWithTags,
+    ) : WalletItem
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -154,16 +160,25 @@ fun WalletView(
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
     ) {
-        val walletItems: List<WalletItem> = sortedPasses.flatMap { (groupId, passes) ->
-            if (groupId != null) listOf(WalletItem.Group(groupId, passes))
-            else passes.map { WalletItem.Single(it) }
-        }
-        val nearbyItems = if (locationEnabled) walletItems.filter { item ->
-            when (item) {
-                is WalletItem.Group -> item.passes.any { it.pass.id in nearbyPassIds }
-                is WalletItem.Single -> item.pass.pass.id in nearbyPassIds
+        val walletItems: List<WalletItem> =
+            sortedPasses.flatMap { (groupId, passes) ->
+                if (groupId != null) {
+                    listOf(WalletItem.Group(groupId, passes))
+                } else {
+                    passes.map { WalletItem.Single(it) }
+                }
             }
-        } else emptyList()
+        val nearbyItems =
+            if (locationEnabled) {
+                walletItems.filter { item ->
+                    when (item) {
+                        is WalletItem.Group -> item.passes.any { it.pass.id in nearbyPassIds }
+                        is WalletItem.Single -> item.pass.pass.id in nearbyPassIds
+                    }
+                }
+            } else {
+                emptyList()
+            }
         val regularItems = walletItems.filter { it !in nearbyItems }
 
         item {
@@ -201,21 +216,25 @@ fun WalletView(
                 }
             }) { item ->
                 when (item) {
-                    is WalletItem.Group -> GroupCard(
-                        groupId = item.groupId,
-                        passes = item.passes,
-                        allTags = tags,
-                        onClick = { navController.navigate("pass/${it.id}") },
-                        walletViewModel = walletViewModel,
-                        selectedPasses = selectedPasses,
-                        nearbyPassIds = nearbyPassIds,
-                    )
+                    is WalletItem.Group ->
+                        GroupCard(
+                            groupId = item.groupId,
+                            passes = item.passes,
+                            allTags = tags,
+                            onClick = { navController.navigate("pass/${it.id}") },
+                            walletViewModel = walletViewModel,
+                            selectedPasses = selectedPasses,
+                            nearbyPassIds = nearbyPassIds,
+                        )
                     is WalletItem.Single -> {
                         val pass = item.pass
                         val isSelectionMode = selectedPasses.isNotEmpty()
                         SwipeToDismiss(
                             leftSwipeBackground = {
-                                Icon(imageVector = if (archive) Icons.Default.Unarchive else Icons.Default.Archive, contentDescription = null)
+                                Icon(
+                                    imageVector = if (archive) Icons.Default.Unarchive else Icons.Default.Archive,
+                                    contentDescription = null,
+                                )
                             },
                             rightSwipeBackground = {
                                 Icon(imageVector = Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
@@ -261,14 +280,15 @@ fun WalletView(
             }
         }) { item ->
             when (item) {
-                is WalletItem.Group -> GroupCard(
-                    groupId = item.groupId,
-                    passes = item.passes,
-                    allTags = tags,
-                    onClick = { navController.navigate("pass/${it.id}") },
-                    walletViewModel = walletViewModel,
-                    selectedPasses = selectedPasses,
-                )
+                is WalletItem.Group ->
+                    GroupCard(
+                        groupId = item.groupId,
+                        passes = item.passes,
+                        allTags = tags,
+                        onClick = { navController.navigate("pass/${it.id}") },
+                        walletViewModel = walletViewModel,
+                        selectedPasses = selectedPasses,
+                    )
                 is WalletItem.Single -> {
                     val pass = item.pass
                     val isSelectionMode = selectedPasses.isNotEmpty()

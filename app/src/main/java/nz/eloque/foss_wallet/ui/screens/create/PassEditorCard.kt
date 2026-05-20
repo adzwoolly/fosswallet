@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -90,18 +89,20 @@ internal fun PassEditorCard(
             )
 
             when (type) {
-                is PassType.Boarding -> EditorBoardingPrimary(
-                    transitType = type.transitType,
-                    primaryFields = primaryFields,
-                    onPrimaryFieldsClick = onPrimaryFieldsClick,
-                )
-                else -> EditorGenericPrimary(
-                    primaryFields = primaryFields,
-                    thumbnailUri = thumbnailUri,
-                    showThumbnail = type is PassType.Generic || type is PassType.Event,
-                    onPrimaryFieldsClick = onPrimaryFieldsClick,
-                    onThumbnailClick = onThumbnailClick,
-                )
+                is PassType.Boarding ->
+                    EditorBoardingPrimary(
+                        transitType = type.transitType,
+                        primaryFields = primaryFields,
+                        onPrimaryFieldsClick = onPrimaryFieldsClick,
+                    )
+                else ->
+                    EditorGenericPrimary(
+                        primaryFields = primaryFields,
+                        thumbnailUri = thumbnailUri,
+                        showThumbnail = type is PassType.Generic || type is PassType.Event,
+                        onPrimaryFieldsClick = onPrimaryFieldsClick,
+                        onThumbnailClick = onThumbnailClick,
+                    )
             }
 
             if (type is PassType.Coupon || type is PassType.Event || type is PassType.StoreCard) {
@@ -182,9 +183,10 @@ private fun EditorHeaderRow(
                     model = logoUri,
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .widthIn(max = this@BoxWithConstraints.maxWidth * 0.4f)
-                        .fillMaxHeight(),
+                    modifier =
+                        Modifier
+                            .widthIn(max = this@BoxWithConstraints.maxWidth * 0.4f)
+                            .fillMaxHeight(),
                 )
             }
 
@@ -206,9 +208,10 @@ private fun EditorHeaderRow(
                 label = stringResource(R.string.header_fields),
                 isEmpty = headerFields.isEmpty(),
                 onClick = onHeaderFieldsClick,
-                modifier = Modifier
-                    .widthIn(max = this@BoxWithConstraints.maxWidth * 0.45f)
-                    .fillMaxHeight(),
+                modifier =
+                    Modifier
+                        .widthIn(max = this@BoxWithConstraints.maxWidth * 0.45f)
+                        .fillMaxHeight(),
             ) {
                 Column(horizontalAlignment = Alignment.End) {
                     headerFields.take(3).forEach { field ->
@@ -396,10 +399,11 @@ internal fun EditorZone(
     val borderColor = LocalContentColor.current.copy(alpha = 0.35f)
 
     Box(
-        modifier = modifier
-            .then(if (isEmpty) Modifier.dashedBorder(borderColor) else Modifier)
-            .clickable(onClick = onClick)
-            .padding(4.dp),
+        modifier =
+            modifier
+                .then(if (isEmpty) Modifier.dashedBorder(borderColor) else Modifier)
+                .clickable(onClick = onClick)
+                .padding(4.dp),
         contentAlignment = Alignment.Center,
     ) {
         if (isEmpty) {
